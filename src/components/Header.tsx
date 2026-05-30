@@ -29,7 +29,7 @@ const links = [
 
 export default function Header() {
   return (
-    <header className="w-full bg-gray-800 text-white p-4">
+    <header className="w-full bg-gray-800 text-white">
       <Navigation links={links} />
     </header>
   );
