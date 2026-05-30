@@ -3,28 +3,16 @@ import Navigation from "@/components/Navigation";
 
 const links = [
   {
-    href: "/f1",
-    label: "F1",
+    href: "/login",
+    label: "Login",
   },
   {
-    href: "/f1/f2",
-    label: "F2",
+    href: "/register",
+    label: "Register",
   },
   {
-    href: "/f1/f2/inner-f2",
-    label: "F2 inner",
-  },
-  {
-    href: "/f3",
-    label: "F3",
-  },
-  {
-    href: "/f4",
-    label: "F4",
-  },
-  {
-    href: "/f5",
-    label: "F5",
+    href: "/forgot-password",
+    label: "Forgot Password",
   },
 ];
 

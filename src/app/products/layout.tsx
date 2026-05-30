@@ -1,30 +1,17 @@
-import Link from "next/link";
 import Navigation from "@/components/Navigation";
 
 const links = [
   {
-    href: "/f1",
-    label: "F1",
+    href: "/products",
+    label: "Products",
   },
   {
-    href: "/f1/f2",
-    label: "F2",
+    href: "/products/1",
+    label: "Product 1",
   },
   {
-    href: "/f1/f2/inner-f2",
-    label: "F2 inner",
-  },
-  {
-    href: "/f3",
-    label: "F3",
-  },
-  {
-    href: "/f4",
-    label: "F4",
-  },
-  {
-    href: "/f5",
-    label: "F5",
+    href: "/products/1/reviews/2",
+    label: "Pr Rew 1 - 2",
   },
 ];
 
