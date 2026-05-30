@@ -35,15 +35,17 @@ export default function FLayout({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col">
-        <ul className="mt-4 flex flex-col items-center justify-center border-b border-gray-700 pb-2">
+        <nav className="mt-4 flex flex-row items-center justify-center border-b border-gray-700 pb-2">
           {links.map((link) => (
-            <li key={link.href} className="text-blue-500 hover:underline">
-              <Link href={link.href} className="hover:underline">
-                {link.label}
-              </Link>
-            </li>
+            <Link
+              href={link.href}
+              key={link.href}
+              className="text-blue-500 hover:underline mx-4 p-2"
+            >
+              {link.label}
+            </Link>
           ))}
-        </ul>
+        </nav>
       </div>
       {children}
     </div>
