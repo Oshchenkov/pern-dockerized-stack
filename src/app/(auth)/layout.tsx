@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
+
 import Navigation from "@/components/Navigation";
+import { useEffect } from "react";
 
 const links = [
   {
@@ -21,6 +23,9 @@ export default function FLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useEffect(() => {
+    console.log("Layout rendered");
+  }, []);
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col">
