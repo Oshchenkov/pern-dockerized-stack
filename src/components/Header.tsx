@@ -6,6 +6,10 @@ const links = [
     label: "Home",
   },
   {
+    href: "/gallery",
+    label: "Gallery",
+  },
+  {
     href: "/login",
     label: "Login",
   },

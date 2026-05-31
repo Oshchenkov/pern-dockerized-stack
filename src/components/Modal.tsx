@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 export default function Modal({ children }: { children: React.ReactNode }) {
   const overlay = useRef<HTMLDivElement>(null);
-  const wrapper = useRef<HTMLDivElement>(null); // overlay.current.firstElementChild of overlay
+  const wrapper = useRef<HTMLDivElement>(null); // overlay.current.firstElementChild
   const router = useRouter();
 
   const handleDismiss = () => {
