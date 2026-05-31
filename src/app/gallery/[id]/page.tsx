@@ -7,6 +7,11 @@ export default async function PhotoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  if (Number(id) > galleryMapData.length) {
+    throw new Error("Photo not found");
+  }
+
   const photo: GalleryItem = galleryMapData.find((p) => p.id === id)!;
 
   if (!photo) {

@@ -8,11 +8,12 @@ export default async function PhotoModal({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const photo: GalleryItem = galleryMapData.find((p) => p.id === id)!;
 
-  if (!photo) {
-    return <div>Photo not found</div>;
+  if (Number(id) > galleryMapData.length) {
+    throw new Error("Photo not found");
   }
+
+  const photo: GalleryItem = galleryMapData.find((p) => p.id === id)!;
 
   return (
     <Modal>
