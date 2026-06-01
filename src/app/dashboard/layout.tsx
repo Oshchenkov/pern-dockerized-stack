@@ -1,16 +1,22 @@
-import React from "react";
+import React, { ReactPromise } from "react";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
   users,
   revenue,
   notifications,
+  login,
 }: Readonly<{
   children: React.ReactNode;
   users: React.ReactNode;
   revenue: React.ReactNode;
   notifications: React.ReactNode;
+  login: React.ReactNode;
 }>) {
+  const isLoggedIn = true;
+  if (!isLoggedIn) {
+    return login;
+  }
   return (
     <>
       <div>{children}</div>
