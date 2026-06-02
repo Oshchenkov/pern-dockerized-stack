@@ -34,10 +34,8 @@ export async function PATCH(
   const updatedData = await request.json();
 
   comments[commentIndex] = { ...comments[commentIndex], ...updatedData };
-  return new Response(JSON.stringify(comments[commentIndex]), {
-    headers: { "Content-Type": "application/json" },
-    status: 200,
-  });
+
+  return Response.json(comments[commentIndex]);
 }
 
 export async function DELETE(
@@ -54,8 +52,6 @@ export async function DELETE(
   }
   const deletedEl = comments[commentIndex];
   comments.splice(commentIndex, 1);
-  return new Response(JSON.stringify({ deleted: deletedEl, all: comments }), {
-    headers: { "Content-Type": "application/json" },
-    status: 200,
-  });
+
+  return Response.json({ deleted: deletedEl, all: comments });
 }

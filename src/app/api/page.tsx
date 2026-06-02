@@ -3,12 +3,20 @@ import Navigation from "@/components/Navigation";
 
 const links = [
   {
-    href: "/api/v1/users",
-    label: "Users",
+    href: "/api/v1/comments",
+    label: "Comments All",
   },
   {
-    href: "/api/v1/comments",
-    label: "Comments",
+    href: "/api/v1/comments?query=ir",
+    label: "Comments query=ir",
+  },
+  {
+    href: "/api/v1/comments?query=1",
+    label: "Comments query=1",
+  },
+  {
+    href: "/api/v1/users",
+    label: "Users",
   },
 ];
 
