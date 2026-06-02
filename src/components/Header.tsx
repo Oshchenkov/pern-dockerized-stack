@@ -33,6 +33,10 @@ const links = [
     href: "/f1",
     label: "F1",
   },
+  {
+    href: "/api",
+    label: "Users API",
+  },
 ];
 
 export default function Header() {
