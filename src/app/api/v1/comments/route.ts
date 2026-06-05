@@ -4,7 +4,6 @@ import { comments } from "./data";
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get("query");
-  console.log("Query param:", searchParams.entries());
 
   const filteredComments = query
     ? comments.filter((c) => c.text.toLowerCase().includes(query.toLowerCase()))
