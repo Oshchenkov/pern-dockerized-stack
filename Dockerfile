@@ -1,93 +1,69 @@
-# =========================================================
-# STAGE 1: Build Environment Setup (with NVM, PNPM, and YARN)
-# =========================================================
-FROM node:20-bookworm-slim AS base
 
+# =============================================================================
+# Next.js + TypeScript + pnpm
+# Stages: base → development
+#                └→ builder → production
+# =============================================================================
+ 
+# -----------------------------------------------------------------------------
+# Stage 1: base — pnpm tooling + dependency install
+# -----------------------------------------------------------------------------
+FROM node:26-bookworm-slim AS base
+ 
+ENV PNPM_VERSION=11.5.2
+RUN npm install -g corepack@latest && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+ 
 WORKDIR /app
-
-# Install system dependencies required for NVM, Python, and native builds
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    bash \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Fix: Force Docker to use Bash shell so NVM commands can be sourced properly
-SHELL ["/bin/sh", "-c"]
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
-
-# Install NVM (Node Version Manager)
-ENV NVM_DIR=/root/.nvm
-ENV NODE_VERSION=v20.11.0
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.5/install.sh | bash \
-    && source $NVM_DIR/nvm.sh \
-    && nvm install $NODE_VERSION \
-    && nvm use $NODE_VERSION \
-    && nvm alias default $NODE_VERSION
-
-# Expose NVM and its specific Node paths globally into the system PATH environment
-ENV PATH=$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH
-
-# Enable Corepack to manage and install global instances of Yarn and PNPM
-RUN corepack enable && corepack prepare pnpm@latest --activate && corepack prepare yarn@stable --activate
-
-# =========================================================
-# STAGE 2: NEW Development Environment Target
-# =========================================================
+ 
+COPY package.json pnpm-lock.yaml ./
+ 
+# -----------------------------------------------------------------------------
+# Stage 2: development — all deps, source mounted at runtime via compose
+# -----------------------------------------------------------------------------
 FROM base AS development
-WORKDIR /app
-
-# Expose port 3000 for local development server access
+ 
+RUN pnpm_config_audit=false pnpm install --frozen-lockfile 
+ 
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Automatically run install and launch the custom framework dev server script
-CMD ["sh", "-c", "if [ -f pnpm-lock.yaml ]; then pnpm install && pnpm run dev; elif [ -f yarn.lock ]; then yarn install && yarn dev; else npm install && npm run dev; fi"]
-
-# =========================================================
-# STAGE 3: Dependency Installer & Builder (For Production Only)
-# =========================================================
+CMD ["pnpm", "dev"]
+ 
+# -----------------------------------------------------------------------------
+# Stage 3: builder — compiles the Next.js app, never shipped to production
+# -----------------------------------------------------------------------------
 FROM base AS builder
-WORKDIR /app
-
-COPY package.json pnpm-lock.yam[l] yarn.loc[k] package-lock.jso[n] ./
-
-RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; \
-    elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
-    else npm ci; \
-    fi
-
+ 
+RUN pnpm_config_audit=false pnpm install --frozen-lockfile
+ 
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN if [ -f pnpm-lock.yaml ]; then pnpm run build; \
-    elif [ -f yarn.lock ]; then yarn build; \
-    else npm run build; \
-    fi
-
-# =========================================================
-# STAGE 4: Final Highly-Optimized Production Runner
-# =========================================================
-FROM base AS runner
+ 
+# Requires `output: 'standalone'` in next.config.ts
+RUN pnpm build
+ 
+# -----------------------------------------------------------------------------
+# Stage 4: production — only the compiled output, no source or node_modules
+# -----------------------------------------------------------------------------
+FROM base AS production
+ 
 WORKDIR /app
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
+ 
+# Non-root user
+RUN addgroup --system nodejs \
+ && adduser --system --ingroup nodejs nextjs
+ 
+# Static public assets
 COPY --from=builder /app/public ./public
+ 
+# Standalone server bundle (includes only the node_modules it actually needs)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+ 
+# Static build output (JS chunks, CSS, images)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
+ 
 USER nextjs
-
+ 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-
+ 
+# standalone output produces server.js at the root
 CMD ["node", "server.js"]
