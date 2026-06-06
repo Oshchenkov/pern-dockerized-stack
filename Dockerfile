@@ -1,4 +1,3 @@
-
 # =============================================================================
 # Next.js + TypeScript + pnpm
 # Stages: base → development
@@ -10,19 +9,21 @@
 # -----------------------------------------------------------------------------
 FROM node:26-bookworm-slim AS base
  
+# Add this environment variable globally in your stage
+ENV CI=true
 ENV PNPM_VERSION=11.5.2
 RUN npm install -g corepack@latest && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
  
 WORKDIR /app
  
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
  
 # -----------------------------------------------------------------------------
 # Stage 2: development — all deps, source mounted at runtime via compose
 # -----------------------------------------------------------------------------
 FROM base AS development
  
-RUN pnpm_config_audit=false pnpm install --frozen-lockfile 
+RUN pnpm install --frozen-lockfile 
  
 EXPOSE 3000
 CMD ["pnpm", "dev"]
@@ -32,7 +33,7 @@ CMD ["pnpm", "dev"]
 # -----------------------------------------------------------------------------
 FROM base AS builder
  
-RUN pnpm_config_audit=false pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
  
 COPY . .
  
