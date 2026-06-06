@@ -1,0 +1,70 @@
+# =============================================================================
+# docker-compose.dev.yaml — development overrides
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Database — expose port locally for GUI clients (TablePlus, DBeaver, etc.)
+  # ---------------------------------------------------------------------------
+  db:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Persist data between restarts in dev too
+      - postgres_data:/var/lib/postgresql/data
+
+  # ---------------------------------------------------------------------------
+  # pgAdmin — optional browser-based DB GUI
+  # ---------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_EMAIL:-admin@local.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # ---------------------------------------------------------------------------
+  # API — development target with nodemon hot-reload & Node debug port
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      DEBUG:    "app:*"
+    ports:
+      - "${API_PORT:-3000}:3000"
+      - "9229:9229"              # Node.js inspector (attach VS Code / Chrome DevTools)
+    volumes:
+      # Mount source for live-reload; node_modules stays in the container
+      - .:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev"]
+
+  # ---------------------------------------------------------------------------
+  # Client — Vite dev server with HMR
+  # ---------------------------------------------------------------------------
+  client:
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:${API_PORT:-3000}
+    ports:
+      - "${CLIENT_PORT:-5173}:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+volumes:
+  pgadmin_data:

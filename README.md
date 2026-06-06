@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PERN Stack Docker Setup
 
-## Getting Started
+> **P**ostgreSQL · **E**xpress · **R**eact · **N**ode.js
 
-First, run the development server:
+## File structure
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+.
+├── Dockerfile                  # Multi-stage: base → development | production
+├── docker-compose.yaml         # Base services (shared config)
+├── docker-compose.dev.yaml     # Dev overrides (hot-reload, pgAdmin, debug ports)
+├── docker-compose.prod.yaml    # Prod overrides (Nginx, resource limits, no mounts)
+├── .env.example                # All supported env variables — copy to .env
+├── nginx/
+│   └── conf.d/
+│       └── default.conf        # Nginx reverse-proxy + SPA config
+└── db/
+    └── init/                   # Optional .sql / .sh init scripts for Postgres
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Quick start
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Set up environment variables
 
-## Learn More
+```bash
+cp .env.example .env
+# Edit .env with your real values (at minimum set POSTGRES_PASSWORD)
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Service  | URL                   |
+| -------- | --------------------- |
+| React    | http://localhost:5173 |
+| API      | http://localhost:3000 |
+| pgAdmin  | http://localhost:5050 |
+| Postgres | localhost:5432        |
 
-## Deploy on Vercel
+**Node.js debugger** is exposed on port `9229` — attach VS Code with:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```json
+// .vscode/launch.json
+{
+  "type": "node",
+  "request": "attach",
+  "name": "Attach to Docker",
+  "port": 9229,
+  "restart": true
+}
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. Production
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up --build -d
+```
+
+- Nginx listens on **80** (redirects to 443) and **443** (HTTPS).
+- Place your TLS certificates in `./nginx/certs/` as `fullchain.pem` and `privkey.pem`.
+- The API is **not** published externally — only Nginx proxies to it on the internal network.
+- React static files are served directly by Nginx from `./client/dist`.
+
+---
+
+## Dockerfile stages
+
+| Stage         | Purpose                                          |
+| ------------- | ------------------------------------------------ |
+| `base`        | Alpine Node 20, system deps, production `npm ci` |
+| `development` | Adds devDependencies; runs Vite dev / nodemon    |
+| `production`  | Runs `npm run build`; drops to non-root user     |
+
+---
+
+## Common commands
+
+```bash
+# View logs for a specific service
+docker compose -f docker-compose.yaml -f docker-compose.dev.yaml logs -f api
+
+# Open a psql shell
+docker compose exec db psql -U postgres -d app
+
+# Rebuild a single service
+docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build api
+
+# Stop and remove volumes (destructive)
+docker compose down -v
+```

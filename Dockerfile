@@ -2,6 +2,9 @@
 # Next.js + TypeScript + pnpm
 # Stages: base → development
 #                └→ builder → production
+#
+# docker build -t next-js-client . 
+# docker run -p 3000:3000 next-js-client
 # =============================================================================
  
 # -----------------------------------------------------------------------------
@@ -44,8 +47,6 @@ RUN pnpm build
 # Stage 4: production — only the compiled output, no source or node_modules
 # -----------------------------------------------------------------------------
 FROM base AS production
- 
-WORKDIR /app
  
 # Non-root user
 RUN addgroup --system nodejs \

@@ -1,0 +1,60 @@
+# =============================================================================
+# docker-compose.yaml — base configuration (shared by dev & prod)
+# Use with: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up
+#           docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL database
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB:       ${POSTGRES_DB:-app}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: place .sql / .sh init scripts here
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Express / Node.js API server
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV:    ${NODE_ENV:-development}
+      PORT:        ${API_PORT:-3000}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app}
+    # Ports and volumes are extended in the environment-specific files
+
+  # ---------------------------------------------------------------------------
+  # React front-end
+  # ---------------------------------------------------------------------------
+  client:
+    build:
+      context: ./client          # adjust if your React app lives elsewhere
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    # Ports are extended in the environment-specific files
+
+volumes:
+  postgres_data:
