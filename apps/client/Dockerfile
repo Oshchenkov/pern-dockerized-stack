@@ -21,7 +21,7 @@
 FROM node:26-bookworm-slim AS base
  
 # Add this environment variable globally in your stage
-ENV PORT=${PORT}
+ENV PORT=3000
 ENV CI=true
 ENV PNPM_VERSION=11.5.2
 RUN npm install -g corepack@latest && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate

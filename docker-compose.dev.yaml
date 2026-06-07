@@ -34,20 +34,22 @@ services:
   # ---------------------------------------------------------------------------
   # API — development target with nodemon hot-reload & Node debug port
   # ---------------------------------------------------------------------------
-  # api:
-  #   build:
-  #     target: development
-  #   environment:
-  #     NODE_ENV: development
-  #     DEBUG:    "app:*"
-  #   ports:
-  #     - "${API_PORT:-4000}:4000"
-  #     - "9229:9229"              # Node.js inspector (attach VS Code / Chrome DevTools)
-  #   volumes:
-  #     # Mount source for live-reload; node_modules stays in the container
-  #     - .:/app
-  #     - /app/node_modules
-  #   command: ["npm", "run", "dev"]
+  api:
+    image: pern-server-dev
+    container_name: pern-server-dev
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      DEBUG:    "app:*"
+    ports:
+      - "${API_PORT:-4000}:4000"
+      - "9229:9229"              # Node.js inspector (attach VS Code / Chrome DevTools)
+    volumes:
+      # Mount source for live-reload; node_modules stays in the container
+      - ./apps/server/:/app
+      - /app/node_modules
+    command: ["pnpm", "dev"]
 
   # ---------------------------------------------------------------------------
   # Client — Vite dev server with HMR
