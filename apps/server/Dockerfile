@@ -1,10 +1,14 @@
 # =============================================================================
 # BASE — shared foundation (Node + pnpm + app metadata)
 # =============================================================================
-FROM node:20-alpine AS base
+FROM node:26-bookworm-slim AS base
 
-# Enable corepack so the pinned pnpm version in package.json is used
-RUN corepack enable && corepack prepare pnpm@latest --activate
+
+ENV PORT=4000
+# Add this environment variable globally in your stage
+ENV CI=true
+ENV PNPM_VERSION=11.5.2
+RUN npm install -g corepack@latest && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 
@@ -28,10 +32,10 @@ RUN pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src ./src
 
-EXPOSE 3000
+EXPOSE ${PORT}
 
 # ts-node-dev gives fast TypeScript hot-reload without a separate build step
-CMD ["pnpm", "run", "dev"]
+CMD ["pnpm", "dev"]
 
 # =============================================================================
 # BUILD — compile TypeScript to JS (intermediate, not a final target)
@@ -57,29 +61,27 @@ RUN pnpm prune --prod
 #   Build:   docker build --target production -t express-api:prod .
 #   Run:     docker run -p 3000:3000 --env-file .env express-api:prod
 # =============================================================================
-FROM node:20-alpine AS production
-
-ENV NODE_ENV=production
+FROM base AS production
 
 # Non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup --system nodejs \
+ && adduser --system --ingroup nodejs appuser
 
-WORKDIR /app
 
 # Copy only what the running process needs:
 #   dist/        — compiled JS
 #   node_modules — pruned prod deps (no devDeps)
 #   package.json — needed by some packages for metadata
-COPY --from=build --chown=appuser:appgroup /app/dist        ./dist
-COPY --from=build --chown=appuser:appgroup /app/node_modules ./node_modules
-COPY --from=build --chown=appuser:appgroup /app/package.json ./package.json
+COPY --from=build --chown=appuser:nodejs /app/dist        ./dist
+COPY --from=build --chown=appuser:nodejs /app/node_modules ./node_modules
+COPY --from=build --chown=appuser:nodejs /app/package.json ./package.json
 
 USER appuser
 
-EXPOSE 3000
+EXPOSE ${PORT}
 
 # Healthcheck so orchestrators (Docker Compose / K8s) can probe readiness
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://localhost:${PORT}/health || exit 1
 
 CMD ["node", "dist/index.js"]
