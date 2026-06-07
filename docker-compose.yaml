@@ -4,20 +4,22 @@
 #           docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up
 # =============================================================================
 
+name: pern-monorepo
+
 services:
 
   # ---------------------------------------------------------------------------
   # PostgreSQL database
   # ---------------------------------------------------------------------------
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER:     ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB:       ${POSTGRES_DB:-app}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql 
       # Optional: place .sql / .sh init scripts here
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
@@ -30,18 +32,18 @@ services:
   # ---------------------------------------------------------------------------
   # Express / Node.js API server
   # ---------------------------------------------------------------------------
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      NODE_ENV:    ${NODE_ENV:-development}
-      PORT:        ${API_PORT:-3000}
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app}
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   environment:
+  #     NODE_ENV:    ${NODE_ENV:-development}
+  #     PORT:        ${API_PORT:-3000}
+  #     DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app}
     # Ports and volumes are extended in the environment-specific files
 
   # ---------------------------------------------------------------------------
@@ -49,11 +51,11 @@ services:
   # ---------------------------------------------------------------------------
   client:
     build:
-      context: ./client          # adjust if your React app lives elsewhere
+      context: ./apps/client          # adjust if your React app lives elsewhere
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      - api
+    # depends_on:
+    #   - api
     # Ports are extended in the environment-specific files
 
 volumes:

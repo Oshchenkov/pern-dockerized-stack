@@ -2,6 +2,7 @@
 # docker-compose.dev.yaml — development overrides
 # Usage: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build
 # =============================================================================
+name: pern-monorepo:development
 
 services:
 
@@ -9,11 +10,9 @@ services:
   # Database — expose port locally for GUI clients (TablePlus, DBeaver, etc.)
   # ---------------------------------------------------------------------------
   db:
+    container_name: pern-db-dev
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      # Persist data between restarts in dev too
-      - postgres_data:/var/lib/postgresql/data
 
   # ---------------------------------------------------------------------------
   # pgAdmin — optional browser-based DB GUI
@@ -35,36 +34,39 @@ services:
   # ---------------------------------------------------------------------------
   # API — development target with nodemon hot-reload & Node debug port
   # ---------------------------------------------------------------------------
-  api:
-    build:
-      target: development
-    environment:
-      NODE_ENV: development
-      DEBUG:    "app:*"
-    ports:
-      - "${API_PORT:-3000}:3000"
-      - "9229:9229"              # Node.js inspector (attach VS Code / Chrome DevTools)
-    volumes:
-      # Mount source for live-reload; node_modules stays in the container
-      - .:/app
-      - /app/node_modules
-    command: ["npm", "run", "dev"]
+  # api:
+  #   build:
+  #     target: development
+  #   environment:
+  #     NODE_ENV: development
+  #     DEBUG:    "app:*"
+  #   ports:
+  #     - "${API_PORT:-4000}:4000"
+  #     - "9229:9229"              # Node.js inspector (attach VS Code / Chrome DevTools)
+  #   volumes:
+  #     # Mount source for live-reload; node_modules stays in the container
+  #     - .:/app
+  #     - /app/node_modules
+  #   command: ["npm", "run", "dev"]
 
   # ---------------------------------------------------------------------------
   # Client — Vite dev server with HMR
   # ---------------------------------------------------------------------------
   client:
+    image: pern-client-dev
+    container_name: pern-client-dev
     build:
       target: development
     environment:
       NODE_ENV: development
-      VITE_API_URL: http://localhost:${API_PORT:-3000}
+      API_URL: http://localhost:${API_PORT:-4000}
     ports:
-      - "${CLIENT_PORT:-5173}:5173"
+      - "${CLIENT_PORT:-3000}:3000"
     volumes:
-      - ./client:/app
+      - ./apps/client/:/app
       - /app/node_modules
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+      - /app/.next
+    command: ["pnpm", "dev"]
 
 volumes:
   pgadmin_data:
