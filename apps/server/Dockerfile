@@ -3,12 +3,13 @@
 # =============================================================================
 FROM node:26-bookworm-slim AS base
 
-
 ENV PORT=4000
+ENV PNPM_VERSION=11.5.2
+
 # Add this environment variable globally in your stage
 ENV CI=true
-ENV PNPM_VERSION=11.5.2
-RUN npm install -g corepack@latest && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN npm install -g corepack@latest && corepack enable \
+  && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 

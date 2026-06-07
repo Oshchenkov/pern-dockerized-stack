@@ -14,17 +14,21 @@
 # docker build --target production -t next-js-client:production .
 # docker run -p 3000:3000 next-js-client:production
 # =============================================================================
- 
+
 # -----------------------------------------------------------------------------
 # Stage 1: base — pnpm tooling + dependency install
 # -----------------------------------------------------------------------------
 FROM node:26-bookworm-slim AS base
+
+ENV PORT=3000
+ENV PNPM_VERSION=11.5.2
  
 # Add this environment variable globally in your stage
-ENV PORT=3000
+
 ENV CI=true
-ENV PNPM_VERSION=11.5.2
-RUN npm install -g corepack@latest && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+
+RUN npm install -g corepack@latest && corepack enable \
+    && corepack prepare pnpm@${PNPM_VERSION} --activate
  
 WORKDIR /app
  
@@ -68,17 +72,14 @@ RUN addgroup --system nodejs \
  
 # Static public assets
 COPY --from=builder /app/public ./public
- 
 # Standalone server bundle (includes only the node_modules it actually needs)
 COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
- 
 # Static build output (JS chunks, CSS, images)
 COPY --from=builder --chown=appuser:nodejs /app/.next/static ./.next/static
  
 USER appuser
  
 EXPOSE ${PORT}
-ENV HOSTNAME="0.0.0.0"
  
 # standalone output produces server.js at the root
 CMD ["node", "server.js"]

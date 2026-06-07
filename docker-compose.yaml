@@ -2,9 +2,13 @@
 # docker-compose.yaml — base configuration (shared by dev & prod)
 # Use with: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up
 #           docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up
+#
+# docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build
+# docker compose -f docker-compose.yaml -f docker-compose.dev.yaml stop
+# docker compose -f docker-compose.yaml -f docker-compose.dev.yaml down
 # =============================================================================
 
-name: pern-monorepo
+name: pern-ts
 
 services:
 
