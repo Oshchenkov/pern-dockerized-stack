@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool, PoolClient, QueryResult } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -20,7 +20,7 @@ pool.on('error', (err: Error) => {
   process.exit(-1);
 });
 
-export const query = async (text: string, params?: unknown[]) => {
+export const query = async (text: string, params?: unknown[]): Promise<QueryResult> => {
   const start = Date.now();
   const res = await pool.query(text, params);
   const duration = Date.now() - start;

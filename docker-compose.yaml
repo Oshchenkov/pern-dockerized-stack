@@ -19,9 +19,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB:       ${POSTGRES_DB:-app}
     volumes:
-      - postgres_data:/var/lib/postgresql 
+      - postgres_pern_data:/var/lib/postgresql 
       # Optional: place .sql / .sh init scripts here
-      - ./db/init:/docker-entrypoint-initdb.d:ro
+      # - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}"]
       interval: 10s
@@ -59,4 +59,4 @@ services:
     # Ports are extended in the environment-specific files
 
 volumes:
-  postgres_data:
+  postgres_pern_data:

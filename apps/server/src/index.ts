@@ -1,17 +1,17 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import dotenv from "dotenv";
 
-import { testConnection } from './db/pool';
-import { runMigrations, seedData } from './db/migrations';
-import { usersRouter, productsRouter, ordersRouter } from './routes';
-import { notFound, errorHandler } from './middleware/errorHandler';
+import { testConnection } from "./db/pool";
+import { runMigrations, seedData } from "./db/migrations";
+import { usersRouter, productsRouter, ordersRouter } from "./routes";
+import { notFound, errorHandler } from "./middleware/errorHandler";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4004;
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
 app.use(helmet());
@@ -20,27 +20,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Health check ──────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // ── API info ──────────────────────────────────────────────────────────────────
-app.get('/api', (_req, res) => {
+app.get("/api", (_req, res) => {
   res.json({
-    name:    'Express TS Demo API',
-    version: '1.0.0',
+    name: "Express TS Demo API",
+    version: "1.0.0",
     endpoints: {
-      users:    '/api/users',
-      products: '/api/products',
-      orders:   '/api/orders',
+      users: "/api/users",
+      products: "/api/products",
+      orders: "/api/orders",
     },
   });
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/users',    usersRouter);
-app.use('/api/products', productsRouter);
-app.use('/api/orders',   ordersRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/products", productsRouter);
+app.use("/api/orders", ordersRouter);
 
 // ── Error handlers ────────────────────────────────────────────────────────────
 app.use(notFound);
@@ -49,9 +49,9 @@ app.use(errorHandler);
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const start = async (): Promise<void> => {
   try {
-    await testConnection();
-    await runMigrations();
-    await seedData();
+    // await testConnection();
+    // await runMigrations();
+    // await seedData();
 
     app.listen(PORT, () => {
       console.log(`\n🚀 Server running at http://localhost:${PORT}`);
@@ -59,7 +59,7 @@ const start = async (): Promise<void> => {
       console.log(`   Health   : http://localhost:${PORT}/health\n`);
     });
   } catch (err) {
-    console.error('❌ Failed to start server:', err);
+    console.error("❌ Failed to start server:", err);
     process.exit(1);
   }
 };
