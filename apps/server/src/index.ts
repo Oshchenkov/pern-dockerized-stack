@@ -13,6 +13,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4004;
 
+console.log(
+  `\n🔧 Starting server in ${process.env.NODE_ENV} mode..., PORT: ${process.env.PORT}`,
+);
+
 // ── Middleware ─────────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
@@ -49,9 +53,9 @@ app.use(errorHandler);
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const start = async (): Promise<void> => {
   try {
-    // await testConnection();
-    // await runMigrations();
-    // await seedData();
+    await testConnection();
+    await runMigrations();
+    await seedData();
 
     app.listen(PORT, () => {
       console.log(`\n🚀 Server running at http://localhost:${PORT}`);
