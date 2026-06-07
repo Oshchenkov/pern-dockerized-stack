@@ -49,6 +49,12 @@ services:
       # Mount source for live-reload; node_modules stays in the container
       - ./apps/server/:/app
       - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${API_PORT}/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
     command: ["pnpm", "dev"]
 
   # ---------------------------------------------------------------------------

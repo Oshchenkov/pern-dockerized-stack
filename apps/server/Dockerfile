@@ -3,7 +3,6 @@
 # =============================================================================
 FROM node:26-bookworm-slim AS base
 
-ENV PORT=4000
 ENV PNPM_VERSION=11.5.2
 
 # Add this environment variable globally in your stage
@@ -33,7 +32,6 @@ RUN pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src ./src
 
-EXPOSE ${PORT}
 
 # ts-node-dev gives fast TypeScript hot-reload without a separate build step
 CMD ["pnpm", "dev"]
@@ -78,11 +76,5 @@ COPY --from=build --chown=appuser:nodejs /app/node_modules ./node_modules
 COPY --from=build --chown=appuser:nodejs /app/package.json ./package.json
 
 USER appuser
-
-EXPOSE ${PORT}
-
-# Healthcheck so orchestrators (Docker Compose / K8s) can probe readiness
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:${PORT}/health || exit 1
 
 CMD ["node", "dist/index.js"]
