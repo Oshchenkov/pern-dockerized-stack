@@ -3,8 +3,16 @@
 # Stages: base → development
 #                └→ builder → production
 #
-# docker build -t next-js-client . 
-# docker run -p 3000:3000 next-js-client
+# 
+# docker build --target development -t next-js-client:development .
+# docker run -p 3000:3000 \     
+#   -v "$(pwd)":/app \
+#   -v /app/node_modules \
+#   -v /app/.next \
+#   next-js-client:development
+#
+# docker build --target production -t next-js-client:production .
+# docker run -p 3000:3000 next-js-client:production
 # =============================================================================
  
 # -----------------------------------------------------------------------------
