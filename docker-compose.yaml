@@ -24,7 +24,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB:       ${POSTGRES_DB:-app}
     volumes:
-      - postgres_pern_data:/var/lib/postgresql 
+      - postgres_pern_data:/var/lib/postgresql
       # Optional: place .sql / .sh init scripts here
       # - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
@@ -50,7 +50,7 @@ services:
       PORT:        ${API_PORT:-4000}
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:${API_PORT}/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:${API_PORT:-4000}/health"]
       interval: 30s
       timeout: 5s
       start_period: 10s
