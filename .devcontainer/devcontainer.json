@@ -8,7 +8,13 @@
   "remoteUser": "node",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest",
+      "enableLCOW": false,
+      "moby": false
+    }
+  },
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [3000, 4000, 5432, 5050],
@@ -25,7 +31,7 @@
         "terminal.integrated.profiles.linux": {
           "zsh": {
             "path": "/bin/zsh",
-            "args": ["-l"] 
+            "args": ["-l"]
           }
         },
         "editor.formatOnSave": true
