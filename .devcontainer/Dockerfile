@@ -1,4 +1,4 @@
-# Use the official Node.js dev container image Node.24 with TypeScript support.
+# Use the official Node.js dev container image Node.24, zsh and with TypeScript support.
 # https://hub.docker.com/r/microsoft/devcontainers-typescript-node
 FROM mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie
 

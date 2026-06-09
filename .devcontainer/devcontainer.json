@@ -1,21 +1,11 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
 {
-  "name": "Node.v24, TS, pnpm.v11.5.2, zsh",
+  "name": "Node.v24, zsh, pnpm.v11.5.2",
   "build": {
     "dockerfile": "Dockerfile"
   },
   "remoteUser": "node",
-  // "features": {
-  //   "ghcr.io/joshuanianji/devcontainer-features/mount-pnpm-store:1": {},
-  //   "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {
-  //     "defaultUser": true,
-  //     "setLocale": true,
-  //     "theme": "avit",
-  //     "plugins": "git docker",
-  //     "desiredLocale": "en_US.UTF-8 UTF-8"
-  //   }
-  // }
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
