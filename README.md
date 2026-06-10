@@ -70,7 +70,7 @@ You must have following software installed in your System:
     ```sh
     git clone https://github.com/Oshchenkov/pern-dockerized-stack.git
     ```
-2. Open folder iv Visual Studio Code:
+2. Open folder iv Visual Studio Code and run devcontainer("Dev Containers" extension) :
 
     ```sh
     cd pern-dockerized-stack && code .
