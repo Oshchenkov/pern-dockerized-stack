@@ -66,18 +66,22 @@ You must have following software installed in your System:
 ### Installation
 
 1. Clone the repo:
+
     ```sh
     git clone https://github.com/Oshchenkov/pern-dockerized-stack.git
     ```
 2. Open folder iv Visual Studio Code:
+
     ```sh
     cd pern-dockerized-stack && code .
     ```
 3. Creating .env from default example
+
     ```sh
     cp .env.example .env
     ```
 4. Build development containers
+
     ```sh
     make build
     ```
@@ -86,6 +90,7 @@ You must have following software installed in your System:
     docker compose -f docker-compose.yaml -f docker-compose.dev.yaml build
     ```
 5. Start containers
+
     ```sh
     make up
     ```
@@ -95,6 +100,30 @@ You must have following software installed in your System:
     ```
     Frontend will be served at [localhost:3000](localhost:3000) (by default from .env variables)
 
+
+
+## Development default link (.env)
+
+- Next (client)
+
+    ```sh
+    localhost:3000
+    ```
+- Express (api)
+
+    ```sh
+    localhost:4000
+    ```
+- PG admin (db)
+
+    ```sh
+    localhost:5050
+    ```
+- DB (port)
+
+    ```sh
+    localhost:5432
+    ```
 
 
 
@@ -124,10 +153,14 @@ Distributed under the MIT License. See `LICENSE.md` for more information.
 [Node-url]: https://nodejs.org/
 
 [PostgreSQL]: https://img.shields.io/badge/postgresql-336690.svg?style=for-the-badge&logo=postgresql&logoColor=white
-[PostgreSQL-url]: https://www.postgresql.org//
+[PostgreSQL-url]: https://www.postgresql.org/
 
 [Docker]: https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com/
 
 [Express]: https://img.shields.io/badge/express-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB
 [Express-url]: https://expressjs.com/
+
+[Express]: https://img.shields.io/badge/express-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB
+[Express-url]: https://expressjs.com/
+
