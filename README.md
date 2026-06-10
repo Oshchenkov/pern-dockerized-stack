@@ -114,7 +114,7 @@ You must have following software installed in your System:
     ```sh
     localhost:4000
     ```
-- PG admin (db)
+- [pgAdmin (db)](https://www.pgadmin.org/)
 
     ```sh
     localhost:5050
