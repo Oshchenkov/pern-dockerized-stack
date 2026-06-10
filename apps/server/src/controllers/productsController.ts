@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { query } from '../db/pool';
-import { AppError } from '../middleware/errorHandler';
+import { query } from '../db/pool.js';
+import { AppError } from '../middleware/errorHandler.js';
 import {
   Product, CreateProductDto, UpdateProductDto, PaginationQuery, PaginatedResult
-} from '../models/types';
+} from '../models/types.js';
 
 export const getProducts = async (
   req: Request<{}, {}, {}, PaginationQuery & { category?: string; minPrice?: string; maxPrice?: string }>,

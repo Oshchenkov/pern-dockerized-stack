@@ -1,3 +1,12 @@
+# docker build --target development -t next-api-server:development .
+
+# docker run -p 4000:4000 \     
+#   -v "$(pwd)":/app \
+#   -v /app/node_modules \
+#   -v /app/.next \
+#   next-api-server:development
+
+
 # =============================================================================
 # BASE — shared foundation (Node + pnpm + app metadata)
 # =============================================================================
@@ -13,7 +22,7 @@ RUN npm install -g corepack@latest && corepack enable \
 WORKDIR /app
 
 # Copy manifests first — best-practice layer cache for deps
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # =============================================================================
 # DEVELOPMENT — hot-reload dev server
@@ -64,7 +73,7 @@ FROM base AS production
 
 # Non-root user for security
 RUN addgroup --system nodejs \
- && adduser --system --ingroup nodejs appuser
+  && adduser --system --ingroup nodejs appuser
 
 
 # Copy only what the running process needs:

@@ -3,15 +3,15 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 
-import { testConnection } from "./db/pool";
-import { runMigrations, seedData } from "./db/migrations";
-import { usersRouter, productsRouter, ordersRouter } from "./routes";
-import { notFound, errorHandler } from "./middleware/errorHandler";
+import { testConnection } from "./db/pool.js";
+import { runMigrations, seedData } from "./db/migrations.js";
+import { usersRouter, productsRouter, ordersRouter } from "./routes/index.js";
+import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4004;
+const PORT = process.env.PORT || 4000;
 
 console.log(
   `\n🔧 Starting server in ${process.env.NODE_ENV} mode..., PORT: ${process.env.PORT}`,

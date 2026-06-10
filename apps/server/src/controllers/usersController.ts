@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { query } from '../db/pool';
-import { AppError } from '../middleware/errorHandler';
+import { query } from '../db/pool.js';
+import { AppError } from '../middleware/errorHandler.js';
 import {
   User, CreateUserDto, UpdateUserDto, PaginationQuery, PaginatedResult
-} from '../models/types';
+} from '../models/types.js';
 
 export const getUsers = async (
   req: Request<{}, {}, {}, PaginationQuery>,

@@ -9,10 +9,13 @@ PROD_COMPOSE_FILE=docker-compose.prod.yaml
 #  DEV TARGETS
 # ---------------------------------------------------------------------------
 
-.PHONY:  build up stop down clean
+.PHONY:  build up stop down clean watch
 
 build:
 	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} build --no-cache
+	
+watch:
+	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} up 
 
 up:
 	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} up -d

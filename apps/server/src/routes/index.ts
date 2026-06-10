@@ -1,7 +1,7 @@
 import { Router, IRouter } from 'express';
-import * as users    from '../controllers/usersController';
-import * as products from '../controllers/productsController';
-import * as orders   from '../controllers/ordersController';
+import * as users    from '../controllers/usersController.js';
+import * as products from '../controllers/productsController.js';
+import * as orders   from '../controllers/ordersController.js';
 
 export const usersRouter: IRouter = Router();
 usersRouter.get   ('/',    users.getUsers);

@@ -1,4 +1,4 @@
-import { query } from './pool';
+import { query } from './pool.js';
 
 export const runMigrations = async (): Promise<void> => {
   console.log('🔧 Running migrations...');

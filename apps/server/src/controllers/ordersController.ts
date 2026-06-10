@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { query, getClient } from '../db/pool';
-import { AppError } from '../middleware/errorHandler';
-import { OrderWithItems, PaginationQuery, PaginatedResult } from '../models/types';
+import { query, getClient } from '../db/pool.js';
+import { AppError } from '../middleware/errorHandler.js';
+import { OrderWithItems, PaginationQuery, PaginatedResult } from '../models/types.js';
 
 export const getOrders = async (
   req: Request<{}, {}, {}, PaginationQuery & { status?: string; user_id?: string }>,
