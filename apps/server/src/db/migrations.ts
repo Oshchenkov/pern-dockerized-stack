@@ -99,7 +99,10 @@ export const seedData = async (): Promise<void> => {
       ('USB-C Hub',           '7-in-1 hub with HDMI, USB 3.0, SD card', 39.99, 200, 'Electronics'),
       ('Notebook A5',         'Dotted hardcover notebook, 240 pages',  12.50, 500, 'Stationery'),
       ('Laptop Stand',        'Adjustable aluminium laptop riser',     34.99,  60, 'Office'),
-      ('Blue Light Glasses',  'Glasses that filter blue light',        24.99, 150, 'Accessories')
+      ('Blue Light Glasses',  'Glasses that filter blue light',        24.99, 150, 'Accessories'),
+      ('Red Light Glasses',  'Glasses that filter red light',        24.99, 120, 'Accessories'),
+      ('Green Light Glasses',  'Glasses that filter green light',        24.99, 12, 'Accessories'),
+      ('Pink Light Glasses',  'Glasses that filter pink light',        24.99, 15, 'Accessories')
   `);
 
   // Orders
@@ -127,5 +130,5 @@ export const seedData = async (): Promise<void> => {
       (5, 8, 1,  24.99)
   `);
 
-  console.log('✅ Demo data seeded (5 users, 8 products, 5 orders)');
+  console.log('✅ Demo data seeded (5 users, 11 products, 5 orders)');
 };
