@@ -21,3 +21,5 @@ export type ApiCommonUser = {
         emailNotifications: boolean;
     };
 }
+
+export const testString = "Shared compoenet work!"

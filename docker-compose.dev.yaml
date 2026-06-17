@@ -25,7 +25,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_EMAIL:-admin@local.dev}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@local.dev}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
     ports:
       - "${PGADMIN_PORT:-5050}:80"
@@ -42,15 +42,16 @@ services:
       target: development
     environment:
       NODE_ENV: development
-      DEBUG:    "app:*"
+      DEBUG: "app:*"
     ports:
       - "${API_PORT:-4000}:4000"
-      - "9229:9229"              # Node.js inspector (attach VS Code / Chrome DevTools)
+      - "9229:9229" # Node.js inspector (attach VS Code / Chrome DevTools)
     volumes:
       # Mount source for live-reload; node_modules stays in the container
-      - ./apps/server/:/app
-      - /app/node_modules
-    command: ["pnpm", "dev"]
+      - ./apps/server/:/app/apps/api
+      - ./shared:/app/shared
+      - /app/apps/api/node_modules
+    command: [ "pnpm", "dev" ]
 
   # ---------------------------------------------------------------------------
   # Client — Next ts dev server with hot-reload
@@ -66,10 +67,11 @@ services:
     ports:
       - "${CLIENT_PORT:-3000}:3000"
     volumes:
-      - ./apps/client/:/app
-      - /app/node_modules
-      - /app/.next
-    command: ["pnpm", "dev"]
+      - ./apps/client/:/app/apps/client
+      - ./shared:/app/shared
+      - /app/apps/client/node_modules
+      - /app/apps/client/.next
+    command: [ "pnpm", "dev" ]
 
 volumes:
   pgadmin_data:

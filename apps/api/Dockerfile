@@ -1,12 +1,3 @@
-# docker build --target development -t next-api-server:development .
-
-# docker run -p 4000:4000 \     
-#   -v "$(pwd)":/app \
-#   -v /app/node_modules \
-#   -v /app/.next \
-#   next-api-server:development
-
-
 # =============================================================================
 # BASE — shared foundation (Node + pnpm + app metadata)
 # =============================================================================
