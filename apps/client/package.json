@@ -2,6 +2,7 @@
   "name": "next-tailwind-starter",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "rm -rf ./next && next dev",
     "build": "next build",
@@ -27,6 +28,5 @@
     "node": ">=24",
     "pnpm": ">=11.5.2"
   },
-  "packageManager": "pnpm@11.5.2",
-  "type": "module"
+  "packageManager": "pnpm@11.5.2"
 }

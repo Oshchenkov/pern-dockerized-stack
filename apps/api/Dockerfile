@@ -10,10 +10,10 @@ ENV CI=true
 RUN npm install -g corepack@latest && corepack enable \
   && corepack prepare pnpm@${PNPM_VERSION} --activate
 
-WORKDIR /app
+WORKDIR /app/apps/api
 
 # Copy manifests first — best-practice layer cache for deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY /apps/api/package.json /apps/api/pnpm-lock.yaml /apps/api/pnpm-workspace.yaml ./
 
 # =============================================================================
 # DEVELOPMENT — hot-reload dev server
@@ -29,8 +29,8 @@ ENV NODE_ENV=development
 RUN pnpm install --frozen-lockfile
 
 # Copy source after deps so code changes don't bust the dep layer
-COPY tsconfig.json ./
-COPY src ./src
+COPY /apps/api/tsconfig.json ./
+COPY /apps/api/src ./src
 
 
 # ts-node-dev gives fast TypeScript hot-reload without a separate build step
@@ -46,8 +46,9 @@ ENV NODE_ENV=production
 # Install all deps (need devDeps for tsc)
 RUN pnpm install --frozen-lockfile
 
-COPY tsconfig.json ./
-COPY src ./src
+COPY /apps/api/tsconfig.json ./
+COPY /apps/api/src ./src
+COPY packages/shared /packages/shared
 
 # Compile — output lands in /app/dist
 RUN pnpm run build
@@ -71,9 +72,9 @@ RUN addgroup --system nodejs \
 #   dist/        — compiled JS
 #   node_modules — pruned prod deps (no devDeps)
 #   package.json — needed by some packages for metadata
-COPY --from=build --chown=appuser:nodejs /app/dist        ./dist
-COPY --from=build --chown=appuser:nodejs /app/node_modules ./node_modules
-COPY --from=build --chown=appuser:nodejs /app/package.json ./package.json
+COPY --from=build --chown=appuser:nodejs /app/apps/api/dist        ./dist
+COPY --from=build --chown=appuser:nodejs /app/apps/api/node_modules ./node_modules
+COPY --from=build --chown=appuser:nodejs /app/apps/api/package.json ./package.json
 
 USER appuser
 

@@ -15,9 +15,9 @@
 # docker run -p 3000:3000 next-js-client:production
 # =============================================================================
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Stage 1: base — pnpm tooling + dependency install
-# -----------------------------------------------------------------------------
+# =============================================================================
 FROM node:26-bookworm-slim AS base
 
 ENV PNPM_VERSION=11.5.2
@@ -28,13 +28,13 @@ ENV CI=true
 RUN npm install -g corepack@latest && corepack enable \
     && corepack prepare pnpm@${PNPM_VERSION} --activate
 
-WORKDIR /app
+WORKDIR /app/apps/client
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY /apps/client/package.json /apps/client/pnpm-lock.yaml /apps/client/pnpm-workspace.yaml ./
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Stage 2: development — all deps, source mounted at runtime via compose
-# -----------------------------------------------------------------------------
+# =============================================================================
 FROM base AS development
 
 ENV NODE_ENV=development
@@ -43,9 +43,9 @@ RUN pnpm install --frozen-lockfile
 
 CMD ["pnpm", "dev"]
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Stage 3: builder — compiles the Next.js app, never shipped to production
-# -----------------------------------------------------------------------------
+# =============================================================================
 FROM base AS builder
 
 ENV NODE_ENV=production
@@ -54,14 +54,18 @@ RUN pnpm install --frozen-lockfile
 # Prune devDependencies so we copy only the production dep tree
 RUN pnpm prune --prod
 
-COPY . .
+COPY /apps/api/tsconfig.json ./
+COPY /apps/api/next.config.ts  ./
+COPY /apps/api/src ./src
+COPY /apps/api/public  ./public 
+COPY packages/shared /packages/shared
 
 # Requires `output: 'standalone'` in next.config.ts
 RUN pnpm build
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Stage 4: production — only the compiled output, no source or node_modules
-# -----------------------------------------------------------------------------
+# =============================================================================
 FROM base AS production
 
 
@@ -70,11 +74,11 @@ RUN addgroup --system nodejs \
     && adduser --system --ingroup nodejs appuser
 
 # Static public assets
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/apps/api/public ./public
 # Standalone server bundle (includes only the node_modules it actually needs)
-COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=appuser:nodejs /app/apps/api/.next/standalone ./
 # Static build output (JS chunks, CSS, images)
-COPY --from=builder --chown=appuser:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=appuser:nodejs /app/apps/api/.next/static ./.next/static
 
 USER appuser
 

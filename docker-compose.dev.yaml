@@ -68,7 +68,7 @@ services:
       - "${CLIENT_PORT:-3000}:3000"
     volumes:
       - ./apps/client/:/app/apps/client
-      - ./shared:/app/shared
+      - ./shared/:/app/shared
       - /app/apps/client/node_modules
       - /app/apps/client/.next
     command: [ "pnpm", "dev" ]
