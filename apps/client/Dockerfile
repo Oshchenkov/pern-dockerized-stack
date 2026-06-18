@@ -1,15 +1,17 @@
 # =============================================================================
+# https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
 # Next.js + TypeScript + pnpm
 # Stages: base → development
 #                └→ builder → production
 # =============================================================================
+ARG NODE_VERSION=26-bookworm-slim
+ARG PNPM_VERSION=11.5.2
 
 # =============================================================================
 # Stage 1: base — pnpm tooling + dependency install
 # =============================================================================
-FROM node:26-bookworm-slim AS base
 
-ENV PNPM_VERSION=11.5.2
+FROM node:${NODE_VERSION} AS base
 
 # Add this environment variable globally in your stage
 
@@ -45,14 +47,16 @@ COPY /apps/client/tsconfig.json ./
 COPY /apps/client/next.config.ts  ./
 COPY /apps/client/src ./src
 COPY /apps/client/public  ./public 
-COPY /shared /shared
+COPY /shared /app/shared
 
 RUN pnpm install --frozen-lockfile
-
 
 # Requires `output: 'standalone'` in next.config.ts
 RUN pnpm build
 
+# WORKDIR /app
+# RUN pnpm deploy --legacy --filter=./apps/client /app/deploy/client
+# WORKDIR /app/apps/client
 # RUN pnpm deploy --prod --legacy /app/deploy/client
 # =============================================================================
 # Stage 4: production — only the compiled output, no source or node_modules
@@ -73,5 +77,5 @@ COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/static ./.next/s
 
 USER appuser
 
-# standalone output produces server.js at the root
-CMD ["node", "server.js"]
+# standalone output produces server.js at monorepo setup path ./app/apps/client/
+CMD ["node", "./app/apps/client/server.js"]

@@ -59,8 +59,14 @@ services:
   # Client — built static assets served by Nginx (no Node process at runtime)
   # ---------------------------------------------------------------------------
   client:
+    image: pern-client-prod
+    container_name: pern-client-prod
     build:
       target: production
+      # target: build
+    # command: sh # 👈 Keeps the container open with a shell (or use 'bash')
+    # tty: true # 👈 Keeps the session interactive
+    # stdin_open: true # 👈 Keeps stdin open
     restart: always
     expose:
       - "3000"
@@ -74,6 +80,7 @@ services:
   # ---------------------------------------------------------------------------
   nginx:
     image: nginx:1.31.1-alpine
+    container_name: pern-nginx-prod
     restart: always
     depends_on:
       api:

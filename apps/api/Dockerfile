@@ -41,11 +41,9 @@ FROM base AS build
 
 ENV NODE_ENV=production
 
-
-
 COPY /apps/api/tsconfig.json ./
 COPY /apps/api/src ./src
-COPY /shared /shared
+COPY /shared /app/shared
 
 RUN pnpm install --frozen-lockfile
 # Compile — output lands in /app/dist
@@ -53,7 +51,9 @@ RUN pnpm run build
 
 # Prune devDependencies so we copy only the production dep tree
 # RUN pnpm deploy --prod --legacy /app/deploy/api
-
+WORKDIR /app
+RUN pnpm deploy --legacy --filter=./apps/api /app/deploy
+WORKDIR /app/apps/api
 # =============================================================================
 # PRODUCTION — minimal, hardened image
 #   Build:   docker build --target production -t express-api:prod .
@@ -71,9 +71,9 @@ RUN addgroup --system nodejs \
 #   node_modules — pruned prod deps (no devDeps)
 #   package.json — needed by some packages for metadata
 COPY --from=build --chown=appuser:nodejs /app/apps/api/dist        ./dist
-COPY --from=build --chown=appuser:nodejs /app/apps/api/node_modules ./node_modules
-COPY --from=build --chown=appuser:nodejs /app/apps/api/package.json ./package.json
-# COPY --from=build /shared                                              /shared
+COPY --from=build --chown=appuser:nodejs /app/deploy/node_modules ./node_modules
+# COPY --from=build --chown=appuser:nodejs /app/deploy/package.json ./package.json
+# COPY --from=build /app/shared                                    /app/shared
 
 USER appuser
 
