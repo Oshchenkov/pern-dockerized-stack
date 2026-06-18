@@ -28,9 +28,11 @@ ENV CI=true
 RUN npm install -g corepack@latest && corepack enable \
     && corepack prepare pnpm@${PNPM_VERSION} --activate
 
-WORKDIR /app/apps/client
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-COPY /apps/client/package.json /apps/client/pnpm-lock.yaml /apps/client/pnpm-workspace.yaml ./
+WORKDIR /app/apps/client
+COPY /apps/client/package.json /apps/client/pnpm-lock.yaml ./
 
 # =============================================================================
 # Stage 2: development — all deps, source mounted at runtime via compose
@@ -54,10 +56,10 @@ RUN pnpm install --frozen-lockfile
 # Prune devDependencies so we copy only the production dep tree
 RUN pnpm prune --prod
 
-COPY /apps/api/tsconfig.json ./
-COPY /apps/api/next.config.ts  ./
-COPY /apps/api/src ./src
-COPY /apps/api/public  ./public 
+COPY /apps/client/tsconfig.json ./
+COPY /apps/client/next.config.ts  ./
+COPY /apps/client/src ./src
+COPY /apps/client/public  ./public 
 COPY packages/shared /packages/shared
 
 # Requires `output: 'standalone'` in next.config.ts
@@ -74,11 +76,11 @@ RUN addgroup --system nodejs \
     && adduser --system --ingroup nodejs appuser
 
 # Static public assets
-COPY --from=builder /app/apps/api/public ./public
+COPY --from=builder /app/apps/client/public ./public
 # Standalone server bundle (includes only the node_modules it actually needs)
-COPY --from=builder --chown=appuser:nodejs /app/apps/api/.next/standalone ./
+COPY --from=builder --chown=appuser:nodejs /app/apps/client/.next/standalone ./
 # Static build output (JS chunks, CSS, images)
-COPY --from=builder --chown=appuser:nodejs /app/apps/api/.next/static ./.next/static
+COPY --from=builder --chown=appuser:nodejs /app/apps/client/.next/static ./.next/static
 
 USER appuser
 

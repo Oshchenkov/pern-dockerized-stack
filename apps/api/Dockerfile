@@ -10,16 +10,14 @@ ENV CI=true
 RUN npm install -g corepack@latest && corepack enable \
   && corepack prepare pnpm@${PNPM_VERSION} --activate
 
-WORKDIR /app/apps/api
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Copy manifests first — best-practice layer cache for deps
-COPY /apps/api/package.json /apps/api/pnpm-lock.yaml /apps/api/pnpm-workspace.yaml ./
+WORKDIR /app/apps/api
+COPY /apps/api/package.json /apps/api/pnpm-lock.yaml ./
 
 # =============================================================================
-# DEVELOPMENT — hot-reload dev server
-#   Build:   docker build --target development -t express-api:dev .
-#   Run:     docker run -p 3000:3000 --env-file .env \
-#              -v $(pwd)/src:/app/src express-api:dev
+# Stage 2: development — all deps, source mounted at runtime via compose
 # =============================================================================
 FROM base AS development
 
@@ -29,8 +27,8 @@ ENV NODE_ENV=development
 RUN pnpm install --frozen-lockfile
 
 # Copy source after deps so code changes don't bust the dep layer
-COPY /apps/api/tsconfig.json ./
-COPY /apps/api/src ./src
+# COPY /apps/api/tsconfig.json ./
+# COPY /apps/api/src ./src
 
 
 # ts-node-dev gives fast TypeScript hot-reload without a separate build step

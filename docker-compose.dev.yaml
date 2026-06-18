@@ -36,8 +36,8 @@ services:
   # API — development target with nodemon hot-reload & Node debug port
   # ---------------------------------------------------------------------------
   api:
-    image: pern-server-dev
-    container_name: pern-server-dev
+    image: pern-api-dev
+    container_name: pern-api-dev
     build:
       target: development
     environment:
@@ -48,8 +48,9 @@ services:
       - "9229:9229" # Node.js inspector (attach VS Code / Chrome DevTools)
     volumes:
       # Mount source for live-reload; node_modules stays in the container
-      - ./apps/server/:/app/apps/api
+      - ./apps/api/:/app/apps/api
       - ./shared:/app/shared
+      - /app/node_modules
       - /app/apps/api/node_modules
     command: [ "pnpm", "dev" ]
 
@@ -69,6 +70,7 @@ services:
     volumes:
       - ./apps/client/:/app/apps/client
       - ./shared/:/app/shared
+      - /app/node_modules
       - /app/apps/client/node_modules
       - /app/apps/client/.next
     command: [ "pnpm", "dev" ]

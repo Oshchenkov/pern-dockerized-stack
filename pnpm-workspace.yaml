@@ -1,3 +1,7 @@
 packages:
-  - 'shared/*'
+  - 'shared/packages/*'
   - 'apps/*'
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
