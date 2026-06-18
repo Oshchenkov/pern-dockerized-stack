@@ -1,4 +1,4 @@
-import type { ApiV1User } from "@/app/api/v1/users/route";
+import type { ApiV1User } from "@/app/client/api/v1/users/route";
 
 export type User = ApiV1User;
 

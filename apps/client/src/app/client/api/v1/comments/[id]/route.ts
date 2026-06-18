@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { comments } from "@/app/api/v1/comments/data";
+import { comments } from "@/app/client/api/v1/comments/data";
 
 export async function GET(
   request: NextRequest,

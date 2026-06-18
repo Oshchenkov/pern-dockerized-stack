@@ -69,11 +69,11 @@ RUN addgroup --system nodejs \
     && adduser --system --ingroup nodejs appuser
 
 # Static public assets
-COPY --from=build /app/apps/client/public ./public
+COPY --from=build /app/apps/client/public ./app/apps/client/public
 # Standalone server bundle (includes only the node_modules it actually needs)
 COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/standalone ./
 # Static build output (JS chunks, CSS, images)
-COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/static ./.next/static
+COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/static ./app/apps/client/.next/static
 
 USER appuser
 

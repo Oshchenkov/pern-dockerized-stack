@@ -3,19 +3,19 @@ import Navigation from "@/components/Navigation";
 
 const links = [
   {
-    href: "/api/v1/comments",
+    href: "/client/api/v1/comments",
     label: "Comments All",
   },
   {
-    href: "/api/v1/comments?query=ir",
+    href: "/client/api/v1/comments?query=ir",
     label: "Comments query=ir",
   },
   {
-    href: "/api/v1/comments?query=1",
+    href: "/client/api/v1/comments?query=1",
     label: "Comments query=1",
   },
   {
-    href: "/api/v1/users",
+    href: "/client/api/v1/users",
     label: "Users",
   },
 ];
@@ -26,7 +26,7 @@ export default function ApiMenuPage() {
       <div className="flex flex-col mb-8">
         <Navigation links={links} />
       </div>
-      <PageTemplate>Api Menu page</PageTemplate>
+      <PageTemplate>client Menu page</PageTemplate>
     </div>
   );
 }
