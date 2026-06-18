@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
 WORKDIR /app/apps/api
-COPY /apps/api/package.json /apps/api/pnpm-lock.yaml ./
+COPY /apps/api/package.json ./
 
 # =============================================================================
 # Stage 2: development — all deps, source mounted at runtime via compose
@@ -41,18 +41,18 @@ FROM base AS build
 
 ENV NODE_ENV=production
 
-# Install all deps (need devDeps for tsc)
-RUN pnpm install --frozen-lockfile
+
 
 COPY /apps/api/tsconfig.json ./
 COPY /apps/api/src ./src
-COPY packages/shared /packages/shared
+COPY /shared /shared
 
+RUN pnpm install --frozen-lockfile
 # Compile — output lands in /app/dist
 RUN pnpm run build
 
 # Prune devDependencies so we copy only the production dep tree
-RUN pnpm prune --prod
+# RUN pnpm deploy --prod --legacy /app/deploy/api
 
 # =============================================================================
 # PRODUCTION — minimal, hardened image
@@ -73,6 +73,7 @@ RUN addgroup --system nodejs \
 COPY --from=build --chown=appuser:nodejs /app/apps/api/dist        ./dist
 COPY --from=build --chown=appuser:nodejs /app/apps/api/node_modules ./node_modules
 COPY --from=build --chown=appuser:nodejs /app/apps/api/package.json ./package.json
+# COPY --from=build /shared                                              /shared
 
 USER appuser
 

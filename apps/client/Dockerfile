@@ -2,17 +2,6 @@
 # Next.js + TypeScript + pnpm
 # Stages: base → development
 #                └→ builder → production
-#
-# 
-# docker build --target development -t next-js-client:development .
-# docker run -p 3000:3000 \     
-#   -v "$(pwd)":/app \
-#   -v /app/node_modules \
-#   -v /app/.next \
-#   next-js-client:development
-#
-# docker build --target production -t next-js-client:production .
-# docker run -p 3000:3000 next-js-client:production
 # =============================================================================
 
 # =============================================================================
@@ -32,7 +21,7 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
 WORKDIR /app/apps/client
-COPY /apps/client/package.json /apps/client/pnpm-lock.yaml ./
+COPY /apps/client/package.json ./
 
 # =============================================================================
 # Stage 2: development — all deps, source mounted at runtime via compose
@@ -46,25 +35,25 @@ RUN pnpm install --frozen-lockfile
 CMD ["pnpm", "dev"]
 
 # =============================================================================
-# Stage 3: builder — compiles the Next.js app, never shipped to production
+# Stage 3: build — compiles the Next.js app, never shipped to production
 # =============================================================================
-FROM base AS builder
+FROM base AS build
 
 ENV NODE_ENV=production
-
-RUN pnpm install --frozen-lockfile
-# Prune devDependencies so we copy only the production dep tree
-RUN pnpm prune --prod
 
 COPY /apps/client/tsconfig.json ./
 COPY /apps/client/next.config.ts  ./
 COPY /apps/client/src ./src
 COPY /apps/client/public  ./public 
-COPY packages/shared /packages/shared
+COPY /shared /shared
+
+RUN pnpm install --frozen-lockfile
+
 
 # Requires `output: 'standalone'` in next.config.ts
 RUN pnpm build
 
+# RUN pnpm deploy --prod --legacy /app/deploy/client
 # =============================================================================
 # Stage 4: production — only the compiled output, no source or node_modules
 # =============================================================================
@@ -76,11 +65,11 @@ RUN addgroup --system nodejs \
     && adduser --system --ingroup nodejs appuser
 
 # Static public assets
-COPY --from=builder /app/apps/client/public ./public
+COPY --from=build /app/apps/client/public ./public
 # Standalone server bundle (includes only the node_modules it actually needs)
-COPY --from=builder --chown=appuser:nodejs /app/apps/client/.next/standalone ./
+COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/standalone ./
 # Static build output (JS chunks, CSS, images)
-COPY --from=builder --chown=appuser:nodejs /app/apps/client/.next/static ./.next/static
+COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/static ./.next/static
 
 USER appuser
 
