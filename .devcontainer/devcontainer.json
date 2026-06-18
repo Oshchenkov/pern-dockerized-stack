@@ -23,6 +23,7 @@
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
+      "extensions": ["esbenp.prettier-vscode"],
       "settings": {
         // Force VS Code to use Zsh as the default terminal
         "terminal.integrated.defaultProfile.linux": "zsh",
@@ -32,6 +33,7 @@
             "args": ["-l"]
           }
         },
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
       }
     }
