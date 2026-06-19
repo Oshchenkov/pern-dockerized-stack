@@ -1,12 +1,3 @@
-# docker build --target development -t next-api-server:development .
-
-# docker run -p 4000:4000 \     
-#   -v "$(pwd)":/app \
-#   -v /app/node_modules \
-#   -v /app/.next \
-#   next-api-server:development
-
-
 # =============================================================================
 # BASE — shared foundation (Node + pnpm + app metadata)
 # =============================================================================
@@ -20,15 +11,13 @@ RUN npm install -g corepack@latest && corepack enable \
   && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Copy manifests first — best-practice layer cache for deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+WORKDIR /app/apps/api
+COPY /apps/api/package.json ./
 
 # =============================================================================
-# DEVELOPMENT — hot-reload dev server
-#   Build:   docker build --target development -t express-api:dev .
-#   Run:     docker run -p 3000:3000 --env-file .env \
-#              -v $(pwd)/src:/app/src express-api:dev
+# Stage 2: development — all deps, source mounted at runtime via compose
 # =============================================================================
 FROM base AS development
 
@@ -38,8 +27,8 @@ ENV NODE_ENV=development
 RUN pnpm install --frozen-lockfile
 
 # Copy source after deps so code changes don't bust the dep layer
-COPY tsconfig.json ./
-COPY src ./src
+# COPY /apps/api/tsconfig.json ./
+# COPY /apps/api/src ./src
 
 
 # ts-node-dev gives fast TypeScript hot-reload without a separate build step
@@ -52,18 +41,19 @@ FROM base AS build
 
 ENV NODE_ENV=production
 
-# Install all deps (need devDeps for tsc)
+COPY /apps/api/tsconfig.json ./
+COPY /apps/api/src ./src
+COPY /shared /app/shared
+
 RUN pnpm install --frozen-lockfile
-
-COPY tsconfig.json ./
-COPY src ./src
-
 # Compile — output lands in /app/dist
 RUN pnpm run build
 
 # Prune devDependencies so we copy only the production dep tree
-RUN pnpm prune --prod
-
+# RUN pnpm deploy --prod --legacy /app/deploy/api
+WORKDIR /app
+RUN pnpm --legacy --filter=./apps/api deploy /app/deploy
+WORKDIR /app/apps/api
 # =============================================================================
 # PRODUCTION — minimal, hardened image
 #   Build:   docker build --target production -t express-api:prod .
@@ -80,9 +70,10 @@ RUN addgroup --system nodejs \
 #   dist/        — compiled JS
 #   node_modules — pruned prod deps (no devDeps)
 #   package.json — needed by some packages for metadata
-COPY --from=build --chown=appuser:nodejs /app/dist        ./dist
-COPY --from=build --chown=appuser:nodejs /app/node_modules ./node_modules
-COPY --from=build --chown=appuser:nodejs /app/package.json ./package.json
+COPY --from=build --chown=appuser:nodejs /app/apps/api/dist        ./dist
+COPY --from=build --chown=appuser:nodejs /app/deploy/node_modules ./node_modules
+# COPY --from=build --chown=appuser:nodejs /app/deploy/package.json ./package.json
+# COPY --from=build /app/shared                                    /app/shared
 
 USER appuser
 

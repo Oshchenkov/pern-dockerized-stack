@@ -34,7 +34,7 @@ const links = [
     label: "F1",
   },
   {
-    href: "/api",
+    href: "/client/api",
     label: "Users API",
   },
 ];

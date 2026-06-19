@@ -7,6 +7,7 @@ import { testConnection } from "./db/pool.js";
 import { runMigrations, seedData } from "./db/migrations.js";
 import { usersRouter, productsRouter, ordersRouter } from "./routes/index.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
+import { greet } from "@repo/shared-types";
 
 dotenv.config();
 
@@ -50,12 +51,14 @@ app.use("/api/orders", ordersRouter);
 app.use(notFound);
 app.use(errorHandler);
 
+console.log(greet("🚀 Server run @repo/shared-types"));
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 const start = async (): Promise<void> => {
   try {
-    await testConnection();
-    await runMigrations();
-    await seedData();
+    // await testConnection();
+    // await runMigrations();
+    // await seedData();
 
     app.listen(PORT, () => {
       console.log(`\n🚀 Server running at http://localhost:${PORT}`);

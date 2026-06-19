@@ -1,0 +1,17 @@
+{
+  "name": "pern-dockerized-stack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "keywords": [],
+  "author": "Oshchenkov",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.5.2",
+      "onFail": "download"
+    }
+  },
+  "type": "module"
+}

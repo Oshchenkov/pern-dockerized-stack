@@ -1,17 +1,20 @@
 {
-  "name": "next-tailwind-starter",
+  "name": "next-client",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "rm -rf ./next && next dev",
+    "dev": "next dev",
     "build": "next build",
+    "build.w": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "@repo/shared-types": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -27,6 +30,5 @@
     "node": ">=24",
     "pnpm": ">=11.5.2"
   },
-  "packageManager": "pnpm@11.5.2",
-  "type": "module"
+  "packageManager": "pnpm@11.5.2"
 }
