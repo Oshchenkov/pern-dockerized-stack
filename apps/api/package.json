@@ -2,6 +2,7 @@
   "name": "express-api",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "main": "src/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -10,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
-  "author": "",
+  "author": "Oshchenkov",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.6",

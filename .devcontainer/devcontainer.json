@@ -2,30 +2,23 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
 {
   "name": "Node.v24, zsh, pnpm.v11.5.2",
+
   "build": {
     "dockerfile": "Dockerfile"
   },
+
   "remoteUser": "node",
 
-  // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": false
     }
   },
 
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [3000, 4000, 5432, 5050],
-
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "yarn install",
-
-  // Configure tool-specific properties.
   "customizations": {
     "vscode": {
       "extensions": ["esbenp.prettier-vscode"],
       "settings": {
-        // Force VS Code to use Zsh as the default terminal
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
           "zsh": {
@@ -38,7 +31,4 @@
       }
     }
   }
-
-  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-  // "remoteUser": "root"
 }
