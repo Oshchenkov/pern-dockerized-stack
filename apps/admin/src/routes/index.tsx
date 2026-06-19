@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
+import { Button, buttonVariants } from "@/components/ui/button";
 
-export const Route = createFileRoute('/')({ component: Home })
+export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
   return (
@@ -9,6 +10,10 @@ function Home() {
       <p className="mt-4 text-lg">
         Edit <code>src/routes/index.tsx</code> to get started.
       </p>
+      <Button className={buttonVariants({ size: "lg", className: "m-4" })}>
+        Btn
+      </Button>
+      Here
     </div>
-  )
+  );
 }
