@@ -52,7 +52,7 @@ RUN pnpm run build
 # Prune devDependencies so we copy only the production dep tree
 # RUN pnpm deploy --prod --legacy /app/deploy/api
 WORKDIR /app
-RUN pnpm deploy --legacy --filter=./apps/api /app/deploy
+RUN pnpm --legacy --filter=./apps/api deploy /app/deploy
 WORKDIR /app/apps/api
 # =============================================================================
 # PRODUCTION — minimal, hardened image

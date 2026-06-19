@@ -63,7 +63,7 @@ services:
     container_name: pern-client-prod
     build:
       target: production
-      # target: build
+    #   target: build
     # command: sh # 👈 Keeps the container open with a shell (or use 'bash')
     # tty: true # 👈 Keeps the session interactive
     # stdin_open: true # 👈 Keeps stdin open

@@ -1,11 +1,12 @@
 {
-  "name": "next-tailwind-starter",
+  "name": "next-client",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build.w": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },

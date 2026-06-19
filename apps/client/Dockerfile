@@ -41,9 +41,10 @@ CMD ["pnpm", "dev"]
 # =============================================================================
 FROM base AS build
 
-ENV NODE_ENV=production
+# ENV NODE_ENV=production
 
 COPY /apps/client/tsconfig.json ./
+COPY /apps/client/postcss.config.mjs ./
 COPY /apps/client/next.config.ts  ./
 COPY /apps/client/src ./src
 COPY /apps/client/public  ./public 
@@ -54,10 +55,10 @@ RUN pnpm install --frozen-lockfile
 # Requires `output: 'standalone'` in next.config.ts
 RUN pnpm build
 
+
 # WORKDIR /app
-# RUN pnpm deploy --legacy --filter=./apps/client /app/deploy/client
-# WORKDIR /app/apps/client
-# RUN pnpm deploy --prod --legacy /app/deploy/client
+# RUN pnpm --legacy --filter=./apps/client --prod deploy /app/deploy
+# WORKDIR /app/apps/api
 # =============================================================================
 # Stage 4: production — only the compiled output, no source or node_modules
 # =============================================================================
@@ -69,13 +70,16 @@ RUN addgroup --system nodejs \
     && adduser --system --ingroup nodejs appuser
 
 # Static public assets
-COPY --from=build /app/apps/client/public ./app/apps/client/public
+# COPY --from=build /app/apps/client/public ./public
+COPY --from=build /app/apps/client/public ./apps/client/public
 # Standalone server bundle (includes only the node_modules it actually needs)
 COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/standalone ./
 # Static build output (JS chunks, CSS, images)
-COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/static ./app/apps/client/.next/static
+
+# COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/static ./.next/static
+COPY --from=build --chown=appuser:nodejs /app/apps/client/.next/static ./apps/client/.next/static
 
 USER appuser
 
-# standalone output produces server.js at monorepo setup path ./app/apps/client/
-CMD ["node", "./app/apps/client/server.js"]
+# standalone output produces server.js at monorepo setup path ./apps/client/
+CMD ["node", "./apps/client/server.js"]
