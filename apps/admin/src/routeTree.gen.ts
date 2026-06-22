@@ -13,7 +13,9 @@ import { Route as RootLayoutRouteImport } from './routes/_rootLayout'
 import { Route as RootLayoutUnauthenticatedRouteImport } from './routes/_rootLayout/_unauthenticated'
 import { Route as RootLayoutAuthenticatedRouteImport } from './routes/_rootLayout/_authenticated'
 import { Route as RootLayoutUnauthenticatedIndexRouteImport } from './routes/_rootLayout/_unauthenticated/index'
+import { Route as RootLayoutUnauthenticatedAuthRouteImport } from './routes/_rootLayout/_unauthenticated/_auth'
 import { Route as RootLayoutAuthenticatedDashboardRouteImport } from './routes/_rootLayout/_authenticated/dashboard'
+import { Route as RootLayoutUnauthenticatedAuthSigninRouteImport } from './routes/_rootLayout/_unauthenticated/_auth/signin'
 
 const RootLayoutRoute = RootLayoutRouteImport.update({
   id: '/_rootLayout',
@@ -34,20 +36,33 @@ const RootLayoutUnauthenticatedIndexRoute =
     path: '/',
     getParentRoute: () => RootLayoutUnauthenticatedRoute,
   } as any)
+const RootLayoutUnauthenticatedAuthRoute =
+  RootLayoutUnauthenticatedAuthRouteImport.update({
+    id: '/_auth',
+    getParentRoute: () => RootLayoutUnauthenticatedRoute,
+  } as any)
 const RootLayoutAuthenticatedDashboardRoute =
   RootLayoutAuthenticatedDashboardRouteImport.update({
     id: '/dashboard',
     path: '/dashboard',
     getParentRoute: () => RootLayoutAuthenticatedRoute,
   } as any)
+const RootLayoutUnauthenticatedAuthSigninRoute =
+  RootLayoutUnauthenticatedAuthSigninRouteImport.update({
+    id: '/signin',
+    path: '/signin',
+    getParentRoute: () => RootLayoutUnauthenticatedAuthRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof RootLayoutUnauthenticatedIndexRoute
   '/dashboard': typeof RootLayoutAuthenticatedDashboardRoute
+  '/signin': typeof RootLayoutUnauthenticatedAuthSigninRoute
 }
 export interface FileRoutesByTo {
   '/': typeof RootLayoutUnauthenticatedIndexRoute
   '/dashboard': typeof RootLayoutAuthenticatedDashboardRoute
+  '/signin': typeof RootLayoutUnauthenticatedAuthSigninRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -55,20 +70,24 @@ export interface FileRoutesById {
   '/_rootLayout/_authenticated': typeof RootLayoutAuthenticatedRouteWithChildren
   '/_rootLayout/_unauthenticated': typeof RootLayoutUnauthenticatedRouteWithChildren
   '/_rootLayout/_authenticated/dashboard': typeof RootLayoutAuthenticatedDashboardRoute
+  '/_rootLayout/_unauthenticated/_auth': typeof RootLayoutUnauthenticatedAuthRouteWithChildren
   '/_rootLayout/_unauthenticated/': typeof RootLayoutUnauthenticatedIndexRoute
+  '/_rootLayout/_unauthenticated/_auth/signin': typeof RootLayoutUnauthenticatedAuthSigninRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard'
+  fullPaths: '/' | '/dashboard' | '/signin'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard'
+  to: '/' | '/dashboard' | '/signin'
   id:
     | '__root__'
     | '/_rootLayout'
     | '/_rootLayout/_authenticated'
     | '/_rootLayout/_unauthenticated'
     | '/_rootLayout/_authenticated/dashboard'
+    | '/_rootLayout/_unauthenticated/_auth'
     | '/_rootLayout/_unauthenticated/'
+    | '/_rootLayout/_unauthenticated/_auth/signin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -105,12 +124,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RootLayoutUnauthenticatedIndexRouteImport
       parentRoute: typeof RootLayoutUnauthenticatedRoute
     }
+    '/_rootLayout/_unauthenticated/_auth': {
+      id: '/_rootLayout/_unauthenticated/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof RootLayoutUnauthenticatedAuthRouteImport
+      parentRoute: typeof RootLayoutUnauthenticatedRoute
+    }
     '/_rootLayout/_authenticated/dashboard': {
       id: '/_rootLayout/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof RootLayoutAuthenticatedDashboardRouteImport
       parentRoute: typeof RootLayoutAuthenticatedRoute
+    }
+    '/_rootLayout/_unauthenticated/_auth/signin': {
+      id: '/_rootLayout/_unauthenticated/_auth/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof RootLayoutUnauthenticatedAuthSigninRouteImport
+      parentRoute: typeof RootLayoutUnauthenticatedAuthRoute
     }
   }
 }
@@ -130,12 +163,30 @@ const RootLayoutAuthenticatedRouteWithChildren =
     RootLayoutAuthenticatedRouteChildren,
   )
 
+interface RootLayoutUnauthenticatedAuthRouteChildren {
+  RootLayoutUnauthenticatedAuthSigninRoute: typeof RootLayoutUnauthenticatedAuthSigninRoute
+}
+
+const RootLayoutUnauthenticatedAuthRouteChildren: RootLayoutUnauthenticatedAuthRouteChildren =
+  {
+    RootLayoutUnauthenticatedAuthSigninRoute:
+      RootLayoutUnauthenticatedAuthSigninRoute,
+  }
+
+const RootLayoutUnauthenticatedAuthRouteWithChildren =
+  RootLayoutUnauthenticatedAuthRoute._addFileChildren(
+    RootLayoutUnauthenticatedAuthRouteChildren,
+  )
+
 interface RootLayoutUnauthenticatedRouteChildren {
+  RootLayoutUnauthenticatedAuthRoute: typeof RootLayoutUnauthenticatedAuthRouteWithChildren
   RootLayoutUnauthenticatedIndexRoute: typeof RootLayoutUnauthenticatedIndexRoute
 }
 
 const RootLayoutUnauthenticatedRouteChildren: RootLayoutUnauthenticatedRouteChildren =
   {
+    RootLayoutUnauthenticatedAuthRoute:
+      RootLayoutUnauthenticatedAuthRouteWithChildren,
     RootLayoutUnauthenticatedIndexRoute: RootLayoutUnauthenticatedIndexRoute,
   }
 

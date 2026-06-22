@@ -10,7 +10,7 @@ function RouteComponent() {
   return (
     <SidebarProvider>
       <SidebarComponent />
-      <main>
+      <main className="relative w-full pl-8 pr-6 py-6">
         <SidebarTrigger />
         <Outlet />
       </main>

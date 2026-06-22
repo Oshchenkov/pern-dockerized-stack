@@ -7,6 +7,7 @@ import {
   SidebarMenuButton,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
+import { Link } from "@tanstack/react-router";
 
 export default function SidebarComponent() {
   return (
@@ -18,16 +19,11 @@ export default function SidebarComponent() {
         <SidebarGroup />
         <SidebarGroup />
         <SidebarGroup />
-        <SidebarMenuButton
-          render={
-            <a href={"#"}>
-              <span>fdgfg</span>
-            </a>
-          }
-        >
-          44
-        </SidebarMenuButton>
-        <SidebarMenuButton isActive>Btn</SidebarMenuButton>
+        <SidebarMenuButton render={<Link to="/">Home</Link>} />
+        <SidebarMenuButton render={<Link to="/dashboard">Dashboard</Link>} />
+        <SidebarMenuButton render={<Link to="/signin">SignIn</Link>} />
+
+        <SidebarMenuButton isActive>isActive btn</SidebarMenuButton>
 
         <SidebarGroup />
         <SidebarGroup />
