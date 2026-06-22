@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Button, buttonVariants } from "@/components/ui/button";
 
-export const Route = createFileRoute("/_mainLayout/")({ component: Home });
+export const Route = createFileRoute("/_rootLayout/_unauthenticated/")({
+  component: Home,
+});
 
 function Home() {
   return (

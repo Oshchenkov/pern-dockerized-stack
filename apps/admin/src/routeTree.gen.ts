@@ -9,75 +9,157 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as MainLayoutRouteImport } from './routes/_mainLayout'
-import { Route as MainLayoutIndexRouteImport } from './routes/_mainLayout/index'
+import { Route as RootLayoutRouteImport } from './routes/_rootLayout'
+import { Route as RootLayoutUnauthenticatedRouteImport } from './routes/_rootLayout/_unauthenticated'
+import { Route as RootLayoutAuthenticatedRouteImport } from './routes/_rootLayout/_authenticated'
+import { Route as RootLayoutUnauthenticatedIndexRouteImport } from './routes/_rootLayout/_unauthenticated/index'
+import { Route as RootLayoutAuthenticatedDashboardRouteImport } from './routes/_rootLayout/_authenticated/dashboard'
 
-const MainLayoutRoute = MainLayoutRouteImport.update({
-  id: '/_mainLayout',
+const RootLayoutRoute = RootLayoutRouteImport.update({
+  id: '/_rootLayout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MainLayoutIndexRoute = MainLayoutIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => MainLayoutRoute,
+const RootLayoutUnauthenticatedRoute =
+  RootLayoutUnauthenticatedRouteImport.update({
+    id: '/_unauthenticated',
+    getParentRoute: () => RootLayoutRoute,
+  } as any)
+const RootLayoutAuthenticatedRoute = RootLayoutAuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => RootLayoutRoute,
 } as any)
+const RootLayoutUnauthenticatedIndexRoute =
+  RootLayoutUnauthenticatedIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => RootLayoutUnauthenticatedRoute,
+  } as any)
+const RootLayoutAuthenticatedDashboardRoute =
+  RootLayoutAuthenticatedDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => RootLayoutAuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof MainLayoutIndexRoute
+  '/': typeof RootLayoutUnauthenticatedIndexRoute
+  '/dashboard': typeof RootLayoutAuthenticatedDashboardRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof MainLayoutIndexRoute
+  '/': typeof RootLayoutUnauthenticatedIndexRoute
+  '/dashboard': typeof RootLayoutAuthenticatedDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_mainLayout': typeof MainLayoutRouteWithChildren
-  '/_mainLayout/': typeof MainLayoutIndexRoute
+  '/_rootLayout': typeof RootLayoutRouteWithChildren
+  '/_rootLayout/_authenticated': typeof RootLayoutAuthenticatedRouteWithChildren
+  '/_rootLayout/_unauthenticated': typeof RootLayoutUnauthenticatedRouteWithChildren
+  '/_rootLayout/_authenticated/dashboard': typeof RootLayoutAuthenticatedDashboardRoute
+  '/_rootLayout/_unauthenticated/': typeof RootLayoutUnauthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/dashboard'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/_mainLayout' | '/_mainLayout/'
+  to: '/' | '/dashboard'
+  id:
+    | '__root__'
+    | '/_rootLayout'
+    | '/_rootLayout/_authenticated'
+    | '/_rootLayout/_unauthenticated'
+    | '/_rootLayout/_authenticated/dashboard'
+    | '/_rootLayout/_unauthenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  MainLayoutRoute: typeof MainLayoutRouteWithChildren
+  RootLayoutRoute: typeof RootLayoutRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_mainLayout': {
-      id: '/_mainLayout'
+    '/_rootLayout': {
+      id: '/_rootLayout'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof MainLayoutRouteImport
+      preLoaderRoute: typeof RootLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_mainLayout/': {
-      id: '/_mainLayout/'
+    '/_rootLayout/_unauthenticated': {
+      id: '/_rootLayout/_unauthenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof RootLayoutUnauthenticatedRouteImport
+      parentRoute: typeof RootLayoutRoute
+    }
+    '/_rootLayout/_authenticated': {
+      id: '/_rootLayout/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof RootLayoutAuthenticatedRouteImport
+      parentRoute: typeof RootLayoutRoute
+    }
+    '/_rootLayout/_unauthenticated/': {
+      id: '/_rootLayout/_unauthenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof MainLayoutIndexRouteImport
-      parentRoute: typeof MainLayoutRoute
+      preLoaderRoute: typeof RootLayoutUnauthenticatedIndexRouteImport
+      parentRoute: typeof RootLayoutUnauthenticatedRoute
+    }
+    '/_rootLayout/_authenticated/dashboard': {
+      id: '/_rootLayout/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof RootLayoutAuthenticatedDashboardRouteImport
+      parentRoute: typeof RootLayoutAuthenticatedRoute
     }
   }
 }
 
-interface MainLayoutRouteChildren {
-  MainLayoutIndexRoute: typeof MainLayoutIndexRoute
+interface RootLayoutAuthenticatedRouteChildren {
+  RootLayoutAuthenticatedDashboardRoute: typeof RootLayoutAuthenticatedDashboardRoute
 }
 
-const MainLayoutRouteChildren: MainLayoutRouteChildren = {
-  MainLayoutIndexRoute: MainLayoutIndexRoute,
+const RootLayoutAuthenticatedRouteChildren: RootLayoutAuthenticatedRouteChildren =
+  {
+    RootLayoutAuthenticatedDashboardRoute:
+      RootLayoutAuthenticatedDashboardRoute,
+  }
+
+const RootLayoutAuthenticatedRouteWithChildren =
+  RootLayoutAuthenticatedRoute._addFileChildren(
+    RootLayoutAuthenticatedRouteChildren,
+  )
+
+interface RootLayoutUnauthenticatedRouteChildren {
+  RootLayoutUnauthenticatedIndexRoute: typeof RootLayoutUnauthenticatedIndexRoute
 }
 
-const MainLayoutRouteWithChildren = MainLayoutRoute._addFileChildren(
-  MainLayoutRouteChildren,
+const RootLayoutUnauthenticatedRouteChildren: RootLayoutUnauthenticatedRouteChildren =
+  {
+    RootLayoutUnauthenticatedIndexRoute: RootLayoutUnauthenticatedIndexRoute,
+  }
+
+const RootLayoutUnauthenticatedRouteWithChildren =
+  RootLayoutUnauthenticatedRoute._addFileChildren(
+    RootLayoutUnauthenticatedRouteChildren,
+  )
+
+interface RootLayoutRouteChildren {
+  RootLayoutAuthenticatedRoute: typeof RootLayoutAuthenticatedRouteWithChildren
+  RootLayoutUnauthenticatedRoute: typeof RootLayoutUnauthenticatedRouteWithChildren
+}
+
+const RootLayoutRouteChildren: RootLayoutRouteChildren = {
+  RootLayoutAuthenticatedRoute: RootLayoutAuthenticatedRouteWithChildren,
+  RootLayoutUnauthenticatedRoute: RootLayoutUnauthenticatedRouteWithChildren,
+}
+
+const RootLayoutRouteWithChildren = RootLayoutRoute._addFileChildren(
+  RootLayoutRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  MainLayoutRoute: MainLayoutRouteWithChildren,
+  RootLayoutRoute: RootLayoutRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
