@@ -21,15 +21,14 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
+  function formSubmitHandler(e: React.SubmitEvent) {
+    e.preventDefault();
+    console.log(e);
+  }
+
   return (
     <>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          console.log(e);
-        }}
-        className="h-full"
-      >
+      <form onSubmit={formSubmitHandler} className="h-full">
         <FieldSet className="w-full h-full flex justify-center items-center ">
           <div className="w-full max-w-sm  ">
             <div className="mb-4 text-center">
@@ -41,8 +40,9 @@ function RouteComponent() {
 
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="username">Username</FieldLabel>
-                <Input id="username" type="text" placeholder="Max Leiter" />
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input id="email" type="email" placeholder="your@email.com" />
+                {/* <FieldError errors={[{ message: "Error msg" }]} /> */}
               </Field>
               <Field>
                 <FieldLabel htmlFor="password">Password</FieldLabel>
