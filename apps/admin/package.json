@@ -3,11 +3,8 @@
   "private": true,
   "type": "module",
   "author": "Oshchenkov",
-  "imports": {
-    "#/*": "./src/*"
-  },
   "scripts": {
-    "dev": "vite dev --port 5000",
+    "dev": "vite dev --host 0.0.0.0",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",

@@ -69,6 +69,17 @@ services:
     depends_on:
       - api
     # Ports are extended in the environment-specific files
+  
+  # ---------------------------------------------------------------------------
+  # Admin — TanStack Router server
+  # ---------------------------------------------------------------------------
+  admin:
+    build:
+      context: . # adjust if your React app lives elsewhere
+      dockerfile: ./apps/admin/Dockerfile
+    restart: unless-stopped
+    # depends_on:
+    #   - api
 
 volumes:
   postgres_pern_data:

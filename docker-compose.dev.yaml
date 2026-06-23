@@ -75,5 +75,27 @@ services:
       - /app/apps/client/.next
     command: [ "pnpm", "dev" ]
 
+  # ---------------------------------------------------------------------------
+  # Admin — TanStack Router dev server with hot-reload
+  # ---------------------------------------------------------------------------
+  admin:
+    image: pern-admin-dev
+    container_name: pern-admin-dev
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      API_URL: http://localhost:${API_PORT:-4000}
+    ports:
+      - "${ADMIN_PORT:-5000}:5000"
+    volumes:
+      - ./apps/admin/:/app/apps/admin
+      - ./shared/:/app/shared
+      - /app/node_modules
+      - /app/apps/admin/node_modules
+      - /app/apps/admin/.tanstack
+      - /app/apps/admin/.vscode
+    command: [ "pnpm", "dev" ]
+
 volumes:
   pgadmin_data:
