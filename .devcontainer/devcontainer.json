@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
 {
-  "name": "Node.v24, zsh, pnpm.v11.5.2",
+  "name": "Node.v24, zsh, pnpm.v11.9.0",
 
   "build": {
     "dockerfile": "Dockerfile"
