@@ -78,8 +78,8 @@ services:
       context: . # adjust if your React app lives elsewhere
       dockerfile: ./apps/admin/Dockerfile
     restart: unless-stopped
-    # depends_on:
-    #   - api
+    depends_on:
+      - api
 
 volumes:
   postgres_pern_data:
