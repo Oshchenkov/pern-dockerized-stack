@@ -54,7 +54,7 @@ app.use(errorHandler);
 console.log(greet("🚀 Server run @repo/shared-types"));
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
-const start = async (): Promise<void> => {
+(async (): Promise<void> => {
   try {
     // await testConnection();
     // await runMigrations();
@@ -69,6 +69,4 @@ const start = async (): Promise<void> => {
     console.error("❌ Failed to start server:", err);
     process.exit(1);
   }
-};
-
-start();
+})();
