@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "private": true,
+  "type": "module",
   "main": "src/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -14,12 +15,14 @@
   "author": "Oshchenkov",
   "license": "ISC",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@repo/shared-types": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.2.0",
-    "pg": "^8.21.0",
-    "@repo/shared-types": "workspace:*"
+    "pg": "^8.21.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -27,12 +30,12 @@
     "@types/node": "^25.9.2",
     "@types/pg": "^8.20.0",
     "nodemon": "^3.1.14",
+    "prisma": "^7.8.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   },
   "engines": {
     "node": ">=24",
     "pnpm": ">=11.9.0"
-  },
-  "type": "module"
+  }
 }

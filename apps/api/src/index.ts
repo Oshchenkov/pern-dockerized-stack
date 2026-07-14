@@ -1,15 +1,14 @@
+import "@/loadEnv";
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import dotenv from "dotenv";
 
 import { testConnection } from "./db/pool.js";
 import { runMigrations, seedData } from "./db/migrations.js";
 import { usersRouter, productsRouter, ordersRouter } from "./routes/index.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { greet } from "@repo/shared-types";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
