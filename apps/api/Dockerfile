@@ -77,4 +77,4 @@ COPY --from=build --chown=appuser:nodejs /app/deploy/node_modules ./node_modules
 
 USER appuser
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/src/server.js"]

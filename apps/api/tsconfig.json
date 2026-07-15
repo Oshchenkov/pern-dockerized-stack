@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "ignoreDeprecations": "6.0",
@@ -15,11 +15,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "types": ["node"],
-    "paths": {
-      "@/*": ["./src/*"],
-      "@shared/*": ["../../shared/*"]
-    }
+    "customConditions": ["development"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/db/prisma.ts"],
   "exclude": ["node_modules", "dist"]
 }
