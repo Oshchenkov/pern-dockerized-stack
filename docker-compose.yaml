@@ -48,10 +48,10 @@ services:
       - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s # How often to check
-      timeout: 3s # How long to wait for a response
-      retries: 5 # Failures needed to consider it "unhealthy"
-      start_period: 5s # Grace period for initial boot up
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   # ---------------------------------------------------------------------------
   # Express / Node.js API server
@@ -73,7 +73,6 @@ services:
       REDIS_URL: redis://redis:${REDIS_PORT:-6379}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
     healthcheck:
-      # test: ["CMD", "wget", "-qO-", "http://localhost:${API_PORT:-4000}/health"]
       test:
         [
           "CMD",
