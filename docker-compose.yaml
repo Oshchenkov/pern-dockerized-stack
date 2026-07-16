@@ -12,7 +12,6 @@
 name: pern-ts
 
 services:
-
   # ---------------------------------------------------------------------------
   # PostgreSQL database
   # ---------------------------------------------------------------------------
@@ -28,11 +27,30 @@ services:
       # Optional: place .sql / .sh init scripts here
       # - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}" ]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Redis database
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:8-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s # How often to check
+      timeout: 3s # How long to wait for a response
+      retries: 5 # Failures needed to consider it "unhealthy"
+      start_period: 5s # Grace period for initial boot up
 
   # ---------------------------------------------------------------------------
   # Express / Node.js API server
@@ -45,13 +63,22 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${API_PORT:-4000}
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app}
+      REDIS_URL: redis://redis:6379
     healthcheck:
       # test: ["CMD", "wget", "-qO-", "http://localhost:${API_PORT:-4000}/health"]
-      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:${API_PORT:-4000}/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))" ]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:${API_PORT:-4000}/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
       interval: 30s
       timeout: 5s
       start_period: 10s
@@ -69,7 +96,7 @@ services:
     depends_on:
       - api
     # Ports are extended in the environment-specific files
-  
+
   # ---------------------------------------------------------------------------
   # Admin — TanStack Router server
   # ---------------------------------------------------------------------------
