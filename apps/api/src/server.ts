@@ -13,13 +13,8 @@ if (!PORT) {
 // CONNECTION TEST FUNCTIONS
 // ==========================================
 const testPrismaConnection = async () => {
-  // $connect() establishes the connection pool.
-  // It will throw an error if the database is unreachable or credentials are wrong.
+  // Forces a live round-trip network query to verify PostgreSQL availability and credentials
   await prisma.$queryRaw`SELECT 1`;
-
-  // Optional: If you want to strictly test query execution (health check)
-  // await prisma.$queryRaw`SELECT 1`;
-
   console.log("✅ Prisma (Database) connected successfully.");
 };
 
@@ -73,14 +68,14 @@ const startServer = async () => {
     await Promise.all([testPrismaConnection(), testRedisConnection()]);
 
     // Start Express App ONLY if connections are successful
-    const server = app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`\n🚀 Server running at http://localhost:${PORT}`);
       console.log(`   API root : http://localhost:${PORT}/api`);
       console.log(`   Health   : http://localhost:${PORT}/health\n`);
     });
 
     // ==========================================
-    // 1️⃣ STANDARD TERMINAL SIGNALS (Clean Exits)
+    // STANDARD TERMINAL SIGNALS (Clean Exits)
     // ==========================================
     process.on("SIGTERM", () =>
       gracefulShutdown("SIGTERM (Process Manager requested stop)", 0),
@@ -88,7 +83,7 @@ const startServer = async () => {
     process.on("SIGINT", () => gracefulShutdown("SIGINT (Ctrl+C)", 0));
 
     // ==========================================
-    // 2️⃣ FATAL CRASH HANDLERS (Dirty Exits)
+    // FATAL CRASH HANDLERS (Dirty Exits)
     // ==========================================
     process.on("uncaughtException", (err: Error) => {
       console.error("💥 UNCAUGHT EXCEPTION! Server is in an unknown state.");
