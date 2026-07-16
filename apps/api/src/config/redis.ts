@@ -8,7 +8,7 @@ if (!redisUrl) {
   );
 }
 
-export const redis = new Redis(redisUrl, {
+const redis = new Redis(redisUrl, {
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     console.log(`Redis retry attempt #${times}, retrying in ${delay}ms...`);
@@ -24,7 +24,7 @@ redis.on("connect", () => {
   console.log("🚀 Successfully connected to the Redis container!");
 });
 
-export function redisExecuteWhenConnected(callback: () => void) {
+function redisExecuteWhenConnected(callback: () => void) {
   // ioredis statuses: 'connect', 'ready', 'connecting', 'reconnecting', 'end', 'wait'
   if (redis.status === "ready" || redis.status === "connect") {
     callback();
@@ -33,3 +33,5 @@ export function redisExecuteWhenConnected(callback: () => void) {
     redis.once("ready", callback);
   }
 }
+
+export { redis, redisExecuteWhenConnected };
