@@ -10,6 +10,7 @@ import { greet } from "@repo/shared-types";
 // import "@/test.js";
 
 import { prisma } from "#src/db/prisma";
+import { redis, redisExecuteWhenConnected } from "#src/db/redis";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -17,6 +18,11 @@ const PORT = process.env.PORT || 4000;
 console.log(
   `\n🔧 Starting server in ${process.env.NODE_ENV} mode..., PORT: ${process.env.PORT}`,
 );
+
+redisExecuteWhenConnected(() => {
+  console.log("Redis is ready! Safely running my startup queries now...");
+  // Your Redis logic here (e.g., seeding data, setting up queues)
+});
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
 app.use(helmet());

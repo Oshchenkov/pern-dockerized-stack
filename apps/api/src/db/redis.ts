@@ -1,0 +1,35 @@
+import Redis from "ioredis";
+
+const redisUrl = process.env.REDIS_URL;
+
+if (!redisUrl) {
+  throw new Error(
+    "❌ CRITICAL: REDIS_URL environment variable is not defined!",
+  );
+}
+
+export const redis = new Redis(redisUrl, {
+  retryStrategy: (times) => {
+    const delay = Math.min(times * 50, 2000);
+    console.log(`Redis retry attempt #${times}, retrying in ${delay}ms...`);
+    return delay;
+  },
+});
+
+redis.on("error", (err) => {
+  console.error("❌ Redis connection error: ", err);
+});
+
+redis.on("connect", () => {
+  console.log("🚀 Successfully connected to the Redis container!");
+});
+
+export function redisExecuteWhenConnected(callback: () => void) {
+  // ioredis statuses: 'connect', 'ready', 'connecting', 'reconnecting', 'end', 'wait'
+  if (redis.status === "ready" || redis.status === "connect") {
+    callback();
+  } else {
+    // Attach a one-time listener that automatically removes itself after firing
+    redis.once("ready", callback);
+  }
+}
