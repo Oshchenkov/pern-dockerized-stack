@@ -9,7 +9,8 @@
     "dev": "tsx --conditions=development --watch src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "studio": "prisma studio --port 5555 --browser none"
   },
   "keywords": [],
   "author": "Oshchenkov",
