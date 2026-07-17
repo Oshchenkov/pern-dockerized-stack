@@ -22,3 +22,6 @@ import { Router, IRouter } from "express";
 // ordersRouter.post ('/',             orders.createOrder);
 // ordersRouter.get  ('/:id',          orders.getOrderById);
 // ordersRouter.patch('/:id/status',   orders.updateOrderStatus);
+
+// /api/v1/users
+// /api/v1/auth
