@@ -10,6 +10,12 @@ ENV CI=true
 RUN npm install -g corepack@latest && corepack enable \
   && corepack prepare pnpm@${PNPM_VERSION} --activate
 
+# Install OpenSSL and CA certificates needed by Prisma
+RUN apt-get update -y && \
+    apt-get install -y openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3
+
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
