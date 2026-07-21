@@ -5,8 +5,6 @@ FROM node:26-bookworm-slim AS base
 
 ENV PNPM_VERSION=11.9.0
 
-# Add this environment variable globally in your stage
-ENV CI=true
 RUN npm install -g corepack@latest && corepack enable \
   && corepack prepare pnpm@${PNPM_VERSION} --activate
 
