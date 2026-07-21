@@ -27,21 +27,20 @@ model UserProfile {
 }
 
 model UserSession {
-    id        String @id @default(cuid())
-    userId    String @map("user_id")
-    tokenHash String @unique @map("token_hash")
-
-    ipAddress String? @map("ip_address") @db.Inet
-    userAgent String? @map("user_agent") // Raw browser string
-    country   String? // Derived from IP via GeoIP
-
+    id           String   @id @default(cuid())
+    userId       String   @map("user_id")
+    tokenHash    String   @unique @map("token_hash")
+    ipAddress    String?  @map("ip_address") @db.Inet
+    userAgent    String?  @map("user_agent") // Raw browser string
+    country      String? // Derived from IP via GeoIP
     expiresAt    DateTime @map("expires_at")
     lastActiveAt DateTime @default(now()) @map("last_active_at")
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @updatedAt @map("updated_at")
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+    @@index([userId, expiresAt]) // "get all active sessions for user"
+    @@index([expiresAt]) // "purge expired" batch delete
     @@map("user_sessions")
 }

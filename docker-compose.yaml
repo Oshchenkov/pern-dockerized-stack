@@ -16,7 +16,8 @@ services:
   # PostgreSQL database
   # ---------------------------------------------------------------------------
   db:
-    image: postgres:18-alpine
+    build: ./apps/db/
+    image: pern-db-pg
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -24,8 +25,13 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-app}
     volumes:
       - postgres_pern_data:/var/lib/postgresql
-      # Optional: place .sql / .sh init scripts here
-      # - ./db/init:/docker-entrypoint-initdb.d:ro
+      - ./apps/db/init:/docker-entrypoint-initdb.d:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_cron"
+      - "-c"
+      - "cron.database_name=${POSTGRES_DB:-app}"
     healthcheck:
       test:
         [
