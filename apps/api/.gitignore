@@ -3,4 +3,4 @@ dist/
 .env
 *.log
 
-/generated/prisma
+prisma/generated/

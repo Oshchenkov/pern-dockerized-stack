@@ -6,6 +6,7 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "tsx --conditions=development --watch src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
