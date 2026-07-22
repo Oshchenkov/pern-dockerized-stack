@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { logger } from "#src/utils/logger";
 
 const redisUrl = process.env.REDIS_URL;
 
@@ -10,13 +11,9 @@ if (!redisUrl) {
 
 const redis = new Redis(redisUrl);
 
-redis.on("error", (err) => {
-  console.error("❌ Redis connection error: ", err);
-});
-
-redis.on("connect", () => {
-  console.log("🚀 Successfully connected to the Redis container!");
-});
+redis.on("connect", () => logger.info("Redis connected"));
+redis.on("error", (err: Error) => logger.error(`Redis error: ${err.message}`));
+redis.on("close", () => logger.warn("Redis connection closed"));
 
 function redisExecuteWhenConnected(callback: () => void) {
   // ioredis statuses: 'connect', 'ready', 'connecting', 'reconnecting', 'end', 'wait'
