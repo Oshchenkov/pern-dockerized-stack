@@ -1,6 +1,11 @@
-import express, { Application, Request, Response, NextFunction } from "express";
+import express, { Application } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { httpLogger } from "./middleware/httpLogger.middleware.js";
+import { requestTracker } from "./middleware/requestTracker.middleware.js";
+import { responseTracker } from "./middleware/responseTracker.middleware.js";
+import { responseFormatterMiddleware } from "./middleware/response.middleware.js";
+import { authMiddleware } from "./middleware/auth.middleware.js";
 
 // import { usersRouter, productsRouter, ordersRouter } from "./routes/index.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";
@@ -19,6 +24,11 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+httpLogger(app); // 1. morgan (raw HTTP log)
+app.use(requestTracker); // 2. attach requestId + log incoming
+app.use(responseTracker); // 3. hook 'finish' for outgoing log
+app.use(responseFormatterMiddleware); // 4. attach res.sendResponse
 
 // ==============================
 // 🛣️ ROUTES
