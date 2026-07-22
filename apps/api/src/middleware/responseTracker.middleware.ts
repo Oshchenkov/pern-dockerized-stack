@@ -19,11 +19,11 @@ export const responseTracker = (
     };
 
     if (res.statusCode >= 500) {
-      logger.error(`📤 ${req.method} ${req.originalUrl}`, req.requestId, meta);
+      logger.error(`⬆️  ${req.method} ${req.originalUrl}`, req.requestId, meta);
     } else if (res.statusCode >= 400) {
-      logger.warn(`📤 ${req.method} ${req.originalUrl}`, req.requestId, meta);
+      logger.warn(`⬆️  ${req.method} ${req.originalUrl}`, req.requestId, meta);
     } else {
-      logger.info(`📤 ${req.method} ${req.originalUrl}`, req.requestId, meta);
+      logger.info(`⬆️  ${req.method} ${req.originalUrl}`, req.requestId, meta);
     }
   });
 
