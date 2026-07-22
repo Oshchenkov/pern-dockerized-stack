@@ -17,6 +17,6 @@
     "types": ["node"],
     "customConditions": ["development"]
   },
-  "include": ["src/**/*", "src/config/prisma.ts"],
+  "include": ["src/**/*", "src/config/prisma.ts", "src/types"],
   "exclude": ["node_modules", "dist"]
 }
