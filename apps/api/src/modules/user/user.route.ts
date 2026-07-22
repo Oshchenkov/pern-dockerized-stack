@@ -1,12 +1,15 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { limiter } from "#src/middleware/rateLimiter.middleware";
 import { asyncHandler } from "#src/utils/asyncHandler";
+import { validate } from "#src/middleware/validate.middleware";
+import { createUserBody, type CreateUserBody } from "./user.validation";
 
 // API routes
 const router: Router = Router();
 
 router.get(
   "/users",
+  validate({ body: createUserBody }),
   limiter({ max: 100 }), // ← inline
   asyncHandler(async (req, res) => {
     // const users = await User.find();
