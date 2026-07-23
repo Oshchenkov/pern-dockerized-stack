@@ -9,17 +9,12 @@ type SchemaMap = {
   params?: z.ZodTypeAny;
 };
 
-type InferValidated<T extends SchemaMap> = {
-  [K in keyof T]: T[K] extends z.ZodTypeAny ? z.infer<T[K]> : never;
-};
-
 interface FieldError {
   field: string;
   message: string;
   code: string;
 }
 
-// ── Augment Express Request ──────────────────────────────────────────
 declare global {
   namespace Express {
     interface Request {
@@ -28,7 +23,7 @@ declare global {
   }
 }
 
-// ── Format Zod errors → flat list ────────────────────────────────────
+// ── Format errors ────────────────────────────────────────────────────
 const formatErrors = (error: ZodError): FieldError[] =>
   error.issues.map((issue) => ({
     field: issue.path.join(".") || "(root)",
@@ -36,9 +31,8 @@ const formatErrors = (error: ZodError): FieldError[] =>
     code: issue.code,
   }));
 
-// ── Middleware factory ───────────────────────────────────────────────
+// ── Middleware ───────────────────────────────────────────────────────
 export const validate = <T extends SchemaMap>(schemas: T): RequestHandler => {
-  // ✅ One cast at the top, clean loop below
   const schemaMap = schemas as Record<string, z.ZodTypeAny | undefined>;
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -66,12 +60,7 @@ export const validate = <T extends SchemaMap>(schemas: T): RequestHandler => {
     }
 
     if (allErrors.length > 0) {
-      res.status(422).json({
-        success: false,
-        message: "Validation failed",
-        data: { errors: allErrors },
-        timestamp: new Date().toISOString(),
-      });
+      res.sendResponse(422, { errors: allErrors }, "Validation failed");
       return;
     }
 
