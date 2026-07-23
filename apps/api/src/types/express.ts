@@ -3,7 +3,7 @@ import { JwtPayload } from "jsonwebtoken";
 declare global {
   namespace Express {
     interface Request {
-      user?: AuthUser & JwtPayload;
+      user?: AuthUser;
       requestId: string;
       requestTime: string;
       validated?: Record<string, unknown>;
