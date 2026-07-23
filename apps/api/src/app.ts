@@ -5,7 +5,7 @@ import compression from "compression";
 import { httpLogger } from "./middleware/httpLogger.middleware.js";
 import { requestTracker } from "./middleware/requestTracker.middleware.js";
 import { responseTracker } from "./middleware/responseTracker.middleware.js";
-import { responseFormatterMiddleware } from "./middleware/response.middleware.js";
+import { responseFormatterMiddleware } from "./middleware/responseFormatter.middleware.js";
 import { authMiddleware } from "./middleware/auth.middleware.js";
 
 // import { usersRouter, productsRouter, ordersRouter } from "./routes/index.js";
