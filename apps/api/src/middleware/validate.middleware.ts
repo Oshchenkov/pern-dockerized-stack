@@ -1,18 +1,31 @@
+// middleware/validate.ts
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import { ZodType, ZodError } from "zod";
+import { z, ZodError } from "zod";
 
 // ── Types ────────────────────────────────────────────────────────────
-interface ValidationSchemas {
-  body?: ZodType;
-  query?: ZodType;
-  params?: ZodType;
-  headers?: ZodType;
-}
+type SchemaMap = {
+  body?: z.ZodTypeAny;
+  query?: z.ZodTypeAny;
+  params?: z.ZodTypeAny;
+};
+
+type InferValidated<T extends SchemaMap> = {
+  [K in keyof T]: T[K] extends z.ZodTypeAny ? z.infer<T[K]> : never;
+};
 
 interface FieldError {
   field: string;
   message: string;
   code: string;
+}
+
+// ── Augment Express Request ──────────────────────────────────────────
+declare global {
+  namespace Express {
+    interface Request {
+      validated?: Record<string, unknown>;
+    }
+  }
 }
 
 // ── Format Zod errors → flat list ────────────────────────────────────
@@ -24,19 +37,22 @@ const formatErrors = (error: ZodError): FieldError[] =>
   }));
 
 // ── Middleware factory ───────────────────────────────────────────────
-export const validate = (schemas: ValidationSchemas): RequestHandler => {
+export const validate = <T extends SchemaMap>(schemas: T): RequestHandler => {
+  // ✅ One cast at the top, clean loop below
+  const schemaMap = schemas as Record<string, z.ZodTypeAny | undefined>;
+
   return (req: Request, res: Response, next: NextFunction): void => {
-    const targets: Array<{ key: keyof ValidationSchemas; source: unknown }> = [
+    const allErrors: FieldError[] = [];
+    const validated: Record<string, unknown> = {};
+
+    const entries: Array<{ key: string; source: unknown }> = [
       { key: "body", source: req.body },
       { key: "query", source: req.query },
       { key: "params", source: req.params },
-      { key: "headers", source: req.headers },
     ];
 
-    const allErrors: FieldError[] = [];
-
-    for (const { key, source } of targets) {
-      const schema = schemas[key];
+    for (const { key, source } of entries) {
+      const schema = schemaMap[key];
       if (!schema) continue;
 
       const result = schema.safeParse(source);
@@ -46,11 +62,7 @@ export const validate = (schemas: ValidationSchemas): RequestHandler => {
         continue;
       }
 
-      // Replace raw input with parsed (transformed + stripped) data
-      if (key === "body") req.body = result.data;
-      if (key === "query") req.query = result.data;
-      if (key === "params") req.params = result.data;
-      // headers are read-only in practice; skip reassignment
+      validated[key] = result.data;
     }
 
     if (allErrors.length > 0) {
@@ -63,6 +75,7 @@ export const validate = (schemas: ValidationSchemas): RequestHandler => {
       return;
     }
 
+    req.validated = validated;
     next();
   };
 };
