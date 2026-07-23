@@ -6,7 +6,7 @@ import { httpLogger } from "./middleware/httpLogger.middleware.js";
 import { requestTracker } from "./middleware/requestTracker.middleware.js";
 import { responseTracker } from "./middleware/responseTracker.middleware.js";
 import { responseFormatterMiddleware } from "./middleware/responseFormatter.middleware.js";
-import { authMiddleware } from "./middleware/auth.middleware.js";
+// import { authenticate, authorize } from "./middleware/auth.middleware.js";
 
 // import { usersRouter, productsRouter, ordersRouter } from "./routes/index.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";

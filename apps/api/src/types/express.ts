@@ -1,12 +1,12 @@
 import { JwtPayload } from "jsonwebtoken";
-import { Response } from "express";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: string | JwtPayload;
+      user?: AuthUser & JwtPayload;
       requestId: string;
       requestTime: string;
+      validated?: Record<string, unknown>;
     }
 
     interface Response {
@@ -20,11 +20,15 @@ declare global {
 }
 
 // Define the shape of your standardized response
-interface ApiResponse<T = unknown> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string | null;
   data: T;
   timestamp: string;
 }
 
-export { ApiResponse };
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: "user" | "admin" | "moderator";
+}

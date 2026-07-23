@@ -1,15 +1,16 @@
+// Zod / Joi schemas
 import { z } from "zod";
 
 // ── Body ─────────────────────────────────────────────────────────────
 export const createUserBody = z.object({
   name: z.string().min(2, "Name must be at least 2 chars").max(50),
-  email: z.string().email("Invalid email format"),
+  email: z.email("Invalid email format"),
   age: z.number().int().min(18, "Must be 18+").optional(),
   role: z.enum(["user", "admin", "moderator"]).default("user"),
 });
 
 export const loginUserBody = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(8, "Password must be at least 8 chars"),
 });
 
@@ -23,7 +24,7 @@ export const listUsersQuery = z.object({
 
 // ── Params ───────────────────────────────────────────────────────────
 export const userIdParams = z.object({
-  id: z.string().uuid("Invalid user ID format"),
+  id: z.uuid("Invalid user ID format"),
 });
 
 // ── Inferred types (use in handlers) ─────────────────────────────────

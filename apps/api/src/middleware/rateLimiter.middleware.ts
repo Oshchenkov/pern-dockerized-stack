@@ -1,10 +1,8 @@
-import { Request, Response, RequestHandler, Application } from "express";
-import rateLimit, {
-  type Options as RateLimitOptions,
-} from "express-rate-limit";
+import { Request, Response, RequestHandler } from "express";
+import rateLimit from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
-import { redis } from "../config/redis";
-import { logger } from "../utils/logger";
+import { redis } from "../config/redis.js";
+import { logger } from "../utils/logger.js";
 
 // ── Types ────────────────────────────────────────────────────────────
 interface LimiterOptions {
@@ -15,7 +13,7 @@ interface LimiterOptions {
 
 // ── Defaults ─────────────────────────────────────────────────────────
 const DEFAULTS: Required<LimiterOptions> = {
-  windowMs: 15 * 60 * 1000, // 15 min
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: "Too many requests, slow down!",
 };
@@ -36,16 +34,19 @@ export const limiter = (overrides: LimiterOptions = {}): RequestHandler => {
     standardHeaders: "draft-8",
     legacyHeaders: false,
 
-    // key by IP + route → each route gets its own counter
     keyGenerator: (req: Request) => `${req.ip}:${req.baseUrl}${req.path}`,
 
-    handler: (_req: Request, res: Response) => {
-      res.status(429).json({
-        success: false,
-        message,
-        data: null,
-        timestamp: new Date().toISOString(),
-      });
+    // ✅ Use global response formatter
+    handler: (req: Request, res: Response) => {
+      logger.warn(
+        `Rate limit exceeded: ${req.method} ${req.originalUrl}`,
+        req.requestId,
+        {
+          ip: req.ip,
+        },
+      );
+
+      res.sendResponse(429, null, message);
     },
   });
 };

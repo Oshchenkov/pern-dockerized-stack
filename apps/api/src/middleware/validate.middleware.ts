@@ -15,14 +15,6 @@ interface FieldError {
   code: string;
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      validated?: Record<string, unknown>;
-    }
-  }
-}
-
 // ── Format errors ────────────────────────────────────────────────────
 const formatErrors = (error: ZodError): FieldError[] =>
   error.issues.map((issue) => ({
