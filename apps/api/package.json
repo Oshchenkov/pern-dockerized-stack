@@ -6,7 +6,6 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "postinstall": "prisma generate",
     "dev": "tsx --conditions=development --watch src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
@@ -37,7 +36,7 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "ioredis": "^5.11.1",
-    "jsonwebtoken": "^9.0.3",
+    "jose": "^6.2.4",
     "morgan": "^1.11.0",
     "pg": "^8.21.0",
     "rate-limit-redis": "^5.0.0"
@@ -47,7 +46,6 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/express-rate-limit": "^6.0.2",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.9.2",
     "@types/pg": "^8.20.0",
