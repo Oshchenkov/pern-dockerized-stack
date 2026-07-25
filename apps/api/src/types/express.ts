@@ -1,5 +1,3 @@
-import { JwtPayload } from "jsonwebtoken";
-
 declare global {
   namespace Express {
     interface Request {
@@ -12,7 +10,7 @@ declare global {
     interface Response {
       sendResponse: <T = unknown>(
         statusCode: number,
-        data: T,
+        data?: T,
         message?: string | null,
       ) => void;
     }
@@ -23,7 +21,7 @@ declare global {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string | null;
-  data: T;
+  data: T | null;
   timestamp: string;
 }
 

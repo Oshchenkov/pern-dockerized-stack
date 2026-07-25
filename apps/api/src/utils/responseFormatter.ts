@@ -4,7 +4,7 @@ import { ApiResponse } from "../types/express";
 export const sendResponse = <T = unknown>(
   res: Response,
   statusCode: number,
-  data: T,
+  data: T | null = null,
   message: string | null = null,
 ): void => {
   const response: ApiResponse<T> = {
