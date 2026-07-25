@@ -9,7 +9,9 @@ if (!redisUrl) {
   );
 }
 
-const redis = new Redis(redisUrl);
+const redis = new Redis(redisUrl, {
+  maxRetriesPerRequest: 2,
+});
 
 redis.on("connect", () => logger.info("Redis connected"));
 redis.on("error", (err: Error) => logger.error(`Redis error: ${err.message}`));
