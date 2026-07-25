@@ -5,7 +5,7 @@
 #                └→ builder → production
 # =============================================================================
 ARG NODE_VERSION=26-bookworm-slim
-ARG PNPM_VERSION=11.5.2
+ARG PNPM_VERSION=11.9.0
 
 # =============================================================================
 # Stage 1: base — pnpm tooling + dependency install

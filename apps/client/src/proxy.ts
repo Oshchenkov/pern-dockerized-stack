@@ -6,7 +6,7 @@ const legacyPrefixes = ["/docs", "/blog2"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (legacyPrefixes.some((prefix) => pathname.startsWith(prefix))) {
-    console.log(" request", request);
+    // console.log(" request", request);
     return NextResponse.next();
   }
   return NextResponse.redirect(new URL("/", request.url));

@@ -5,7 +5,6 @@
 name: pern-monorepo:development
 
 services:
-
   # ---------------------------------------------------------------------------
   # Database — expose port locally for GUI clients (TablePlus, DBeaver, etc.)
   # ---------------------------------------------------------------------------
@@ -46,13 +45,14 @@ services:
     ports:
       - "${API_PORT:-4000}:4000"
       - "9229:9229" # Node.js inspector (attach VS Code / Chrome DevTools)
+      - "5555:5555" # optional: Prisma Studio (GUI for DB)
     volumes:
       # Mount source for live-reload; node_modules stays in the container
       - ./apps/api/:/app/apps/api
       - ./shared:/app/shared
       - /app/node_modules
       - /app/apps/api/node_modules
-    command: [ "pnpm", "dev" ]
+    command: ["pnpm", "dev"]
 
   # ---------------------------------------------------------------------------
   # Client — Next ts dev server with hot-reload
@@ -73,7 +73,29 @@ services:
       - /app/node_modules
       - /app/apps/client/node_modules
       - /app/apps/client/.next
-    command: [ "pnpm", "dev" ]
+    command: ["pnpm", "dev"]
+
+  # ---------------------------------------------------------------------------
+  # Admin — TanStack Router dev server with hot-reload
+  # ---------------------------------------------------------------------------
+  admin:
+    image: pern-admin-dev
+    container_name: pern-admin-dev
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      API_URL: http://localhost:${API_PORT:-4000}
+    ports:
+      - "${ADMIN_PORT:-5000}:5000"
+    volumes:
+      - ./apps/admin/:/app/apps/admin
+      - ./shared/:/app/shared
+      - /app/node_modules
+      - /app/apps/admin/node_modules
+      - /app/apps/admin/.tanstack
+      - /app/apps/admin/.vscode
+    command: ["pnpm", "dev"]
 
 volumes:
   pgadmin_data:

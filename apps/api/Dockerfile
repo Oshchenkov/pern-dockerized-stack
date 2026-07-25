@@ -3,12 +3,16 @@
 # =============================================================================
 FROM node:26-bookworm-slim AS base
 
-ENV PNPM_VERSION=11.5.2
+ENV PNPM_VERSION=11.9.0
 
-# Add this environment variable globally in your stage
-ENV CI=true
 RUN npm install -g corepack@latest && corepack enable \
   && corepack prepare pnpm@${PNPM_VERSION} --activate
+
+# Install OpenSSL and CA certificates needed by Prisma
+RUN apt-get update -y && \
+    apt-get install -y openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3
 
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -77,4 +81,4 @@ COPY --from=build --chown=appuser:nodejs /app/deploy/node_modules ./node_modules
 
 USER appuser
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/src/server.js"]

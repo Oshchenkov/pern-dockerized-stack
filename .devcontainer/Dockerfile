@@ -2,9 +2,11 @@
 # https://hub.docker.com/r/microsoft/devcontainers-typescript-node
 FROM mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie
 
+ARG PNPM_VERSION=11.9.0
+
 RUN corepack enable && \
-    corepack prepare pnpm@11.5.2 --activate && \
-    npm install -g pnpm@11.5.2
+    corepack prepare pnpm@${PNPM_VERSION} --activate && \
+    npm install -g pnpm@${PNPM_VERSION}
 
 # Switch to the non-root 'node' user for Zsh installation
 USER node

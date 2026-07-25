@@ -1,0 +1,136 @@
+enum UserStatus {
+    ACTIVE
+    BANNED
+}
+
+enum SessionStatus {
+    ACTIVE
+    REVOKED
+}
+
+model User {
+    id                   String     @id @default(cuid())
+    status               UserStatus @default(ACTIVE)
+    tokenVersion         Int        @default(0) @map("token_version")
+    primaryEmail         String?    @unique @map("primary_email")
+    primaryEmailVerified Boolean    @default(false) @map("primary_email_verified")
+    createdAt            DateTime   @default(now()) @map("created_at")
+    updatedAt            DateTime   @updatedAt @map("updated_at")
+
+    profile      UserProfile?
+    sessions     UserSession[]
+    credential   UserCredential?
+    identities   OAuthAccount[]
+    revokedToken UserRevokedToken[]
+
+    @@index([status])
+    @@map("users")
+}
+
+// Social-only users may have no Credential row.
+model UserCredential {
+    userId       String   @id @map("user_id")
+    passwordHash String   @map("password_hash")
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("user_credentials")
+}
+
+model OAuthAccount {
+    id                String   @id @default(cuid())
+    userId            String   @map("user_id")
+    provider          String   @map("provider") // google, github, facebook, oidc, etc.
+    providerUserId    String   @map("provider_user_id") // sub / id from provider
+    providerEmail     String?  @map("provider_email")
+    // providerEmailVerified Boolean? @default(false)
+    providerName      String?  @map("provider_name")
+    providerAvatarUrl String?  @map("provider_avatar_url")
+    accessToken       String?  @map("access_token")
+    refreshToken      String?  @map("refresh_token")
+    expiresIn         Int?     @map("expires_in")
+    createdAt         DateTime @default(now()) @map("created_at")
+    updatedAt         DateTime @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerUserId])
+    @@index([userId])
+    @@index([providerEmail])
+    @@map("user_oauth_accounts")
+}
+
+model UserSession {
+    id               String        @id @default(cuid())
+    familyId         String        @map("family_id") // for multi-device session revocation
+    userId           String        @map("user_id")
+    refreshTokenHash String        @unique @map("refresh_token_hash")
+    status           SessionStatus @default(ACTIVE) @map("status")
+    ipAddress        String?       @map("ip_address") @db.Inet
+    userAgent        String?       @map("user_agent") // Raw browser string
+    country          String?       @map("country") // Derived from IP via GeoIP
+    expiresAt        DateTime      @map("expires_at")
+    lastActiveAt     DateTime      @default(now()) @map("last_active_at")
+    revokedAt        DateTime?     @map("revoked_at")
+    replacedBy       String?       @map("replaced_by") // session.id of the new session that replaced this one
+    createdAt        DateTime      @default(now()) @map("created_at")
+    updatedAt        DateTime      @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId, expiresAt, status]) // "get all active sessions for user"
+    @@index([expiresAt]) // "purge expired" batch delete
+    @@index([familyId])
+    @@map("user_sessions")
+}
+
+// Optional persistent JWT denylist.
+// Redis is the fast path, PostgreSQL is fallback/audit.
+model UserRevokedToken {
+    jti       String   @id
+    sid       String?
+    userId    String
+    reason    String
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([expiresAt])
+    @@map("user_revoked_tokens")
+}
+
+// ReBAC relationship tuples.
+//
+// Examples:
+// user:alice owner document:doc1
+// user:alice admin organization:org1
+// organization:org1 editor project:project1
+model UserRelationshipTuple {
+    id          String   @id @default(uuid())
+    subjectType String // user, organization, group, serviceAccount
+    subjectId   String
+    relation    String // owner, admin, member, editor, viewer
+    objectType  String // document, project, organization, folder
+    objectId    String
+    createdAt   DateTime @default(now())
+
+    @@unique([subjectType, subjectId, relation, objectType, objectId])
+    @@index([subjectType, subjectId, relation])
+    @@index([objectType, objectId, relation])
+    @@map("user_relationship_tuples")
+}
+
+model UserProfile {
+    userId      String  @id @map("user_id")
+    name        String?
+    surname     String?
+    avatarUrl   String? @map("avatar_url")
+    profileInfo Json?   @map("profile_info") // JSON blob for additional profile info from oAuth
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("user_profiles")
+}
