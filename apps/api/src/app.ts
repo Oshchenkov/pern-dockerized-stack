@@ -6,11 +6,10 @@ import { httpLogger } from "./middleware/httpLogger.middleware.js";
 import { requestTracker } from "./middleware/requestTracker.middleware.js";
 import { responseTracker } from "./middleware/responseTracker.middleware.js";
 import { responseFormatterMiddleware } from "./middleware/responseFormatter.middleware.js";
-// import { authenticate, authorize } from "./middleware/auth.middleware.js";
-
-// import { usersRouter, productsRouter, ordersRouter } from "./routes/index.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";
 import { greet } from "@repo/shared-types";
+import { v1Router } from "#src/routes/index";
+// import { authenticate, authorize } from "./middleware/auth.middleware.js";
 
 const app: Application = express();
 
@@ -40,27 +39,7 @@ app.use(responseFormatterMiddleware); // 4. attach res.sendResponse
 // 🛣️ ROUTES
 // ==============================
 
-// app.use("/api/users", usersRouter);
-// app.use("/api/products", productsRouter);
-// app.use("/api/orders", ordersRouter);
-
-// ── Health check ──────────────────────────────────────────────────────────────
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// ── API info ──────────────────────────────────────────────────────────────────
-app.get("/api", (_req, res) => {
-  res.json({
-    name: "Express TS Demo API",
-    version: "1.0.0",
-    endpoints: {
-      users: "/api/users",
-      products: "/api/products",
-      orders: "/api/orders",
-    },
-  });
-});
+app.use("/api/v1", v1Router);
 
 // ==============================
 // 🚨 GLOBAL ERROR HANDLER

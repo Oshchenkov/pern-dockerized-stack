@@ -30,4 +30,11 @@ router.post(
   }),
 );
 
+// export const usersRouter: IRouter = Router();
+// usersRouter.get   ('/',    users.getUsers);
+// usersRouter.post  ('/',    users.createUser);
+// usersRouter.get   ('/:id', users.getUserById);
+// usersRouter.patch ('/:id', users.updateUser);
+// usersRouter.delete('/:id', users.deleteUser);
+
 export default router;

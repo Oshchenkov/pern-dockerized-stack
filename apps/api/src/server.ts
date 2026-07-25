@@ -70,8 +70,6 @@ const startServer = async () => {
     // Start Express App ONLY if connections are successful
     server = app.listen(PORT, () => {
       console.log(`\n🚀 Server running at http://localhost:${PORT}`);
-      console.log(`   API root : http://localhost:${PORT}/api`);
-      console.log(`   Health   : http://localhost:${PORT}/health\n`);
     });
 
     // ==========================================
