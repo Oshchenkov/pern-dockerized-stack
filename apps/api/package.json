@@ -63,12 +63,28 @@
   },
   "imports": {
     "#src/*": {
-      "development": "./src/*.ts",
-      "default": "./dist/src/*.js"
+      "development": [
+        "./src/*.ts",
+        "./src/*/index.ts",
+        "./src/*"
+      ],
+      "default": [
+        "./dist/src/*.js",
+        "./dist/src/*/index.js",
+        "./dist/src/*"
+      ]
     },
     "#root/*": {
-      "development": "./*.ts",
-      "default": "./dist/*.js"
+      "development": [
+        "./*.ts",
+        "./*/index.ts",
+        "./*"
+      ],
+      "default": [
+        "./dist/*.js",
+        "./dist/*/index.js",
+        "./dist/*"
+      ]
     }
   },
   "prisma": {
