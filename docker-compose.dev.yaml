@@ -52,6 +52,8 @@ services:
       - ./shared:/app/shared
       - /app/node_modules
       - /app/apps/api/node_modules
+      - /app/shared/packages/shared-types/node_modules
+      - /app/shared/packages/shared-types/dist
 
   # ---------------------------------------------------------------------------
   # Client — Next ts dev server with hot-reload
