@@ -70,5 +70,8 @@
       "development": "./*.ts",
       "default": "./dist/*.js"
     }
+  },
+  "prisma": {
+    "schema": "prisma/models"
   }
 }

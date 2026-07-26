@@ -52,7 +52,6 @@ services:
       - ./shared:/app/shared
       - /app/node_modules
       - /app/apps/api/node_modules
-    command: ["pnpm", "dev"]
 
   # ---------------------------------------------------------------------------
   # Client — Next ts dev server with hot-reload

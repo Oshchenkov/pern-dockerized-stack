@@ -36,7 +36,8 @@ RUN pnpm install --frozen-lockfile
 
 
 # ts-node-dev gives fast TypeScript hot-reload without a separate build step
-CMD ["pnpm", "dev"]
+# CMD ["pnpm", "dev"]
+CMD pnpm prisma generate && pnpm dev
 
 # =============================================================================
 # BUILD — compile TypeScript to JS (intermediate, not a final target)
