@@ -22,12 +22,43 @@ export const notFound = (
   next(new AppError(404, `Route not found: ${req.method} ${req.originalUrl}`));
 };
 
+// Other errors
+
+export class UnauthorizedError extends AppError {
+  constructor(message = "Authentication required", details?: unknown) {
+    super(401, `UNAUTHORIZED: ${message}`, details);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "Access denied", details?: unknown) {
+    super(403, `FORBIDDEN: ${message}`, details);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message = "Resource already exists", details?: unknown) {
+    super(409, `CONFLICT: ${message}`, details);
+  }
+}
+
+export class TooManyRequestsError extends AppError {
+  constructor(message = "Too many requests", details?: unknown) {
+    super(429, `TOO_MANY_REQUESTS: ${message}`, details);
+  }
+}
+
+export class BadRequestError extends AppError {
+  constructor(message = "Invalid request", details?: unknown) {
+    super(400, `BAD_REQUEST: ${message}`, details);
+  }
+}
+
 // ── Global Error Handler ─────────────────────────────────────────────
 export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction,
 ): void => {
   // Guard: headers already sent (e.g. streaming response failed mid-way)

@@ -1,83 +1,65 @@
-import { Request, Response, NextFunction, RequestHandler } from "express";
-import jwt from "jsonwebtoken";
-import { AppError } from "./error.middleware.js";
-import { logger } from "../utils/logger.js";
-import type { AuthUser } from "../types/express.js";
+// src/middleware/authenticate.ts
+import type { Request, Response, NextFunction } from "express";
+import { verifyAccessToken } from "#src/services/token.service";
+import { denylistService } from "#src/services/denylist.service";
+import { sessionService } from "#src/services/session.service";
+import { prisma } from "#src/config/prisma";
+import {
+  UnauthorizedError,
+  ForbiddenError,
+} from "#src/middleware/error.middleware";
+import { COOKIE_NAMES } from "#src/utils/constants";
 
-// ── JWT Secret ───────────────────────────────────────────────────────
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is not set");
-}
-
-// ── Verify token (sync — simpler than callback) ──────────────────────
-const verifyToken = (token: string): AuthUser => {
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthUser & jwt.JwtPayload;
-
-    return {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-    };
-  } catch (err) {
-    if (err instanceof jwt.TokenExpiredError) {
-      throw new AppError(401, "Token expired");
-    }
-    if (err instanceof jwt.JsonWebTokenError) {
-      throw new AppError(403, "Invalid token");
-    }
-    if (err instanceof jwt.NotBeforeError) {
-      throw new AppError(403, "Token not yet active");
-    }
-    throw new AppError(403, "Token verification failed");
-  }
-};
-
-// ── Auth middleware ──────────────────────────────────────────────────
-export const authenticate = (
+/**
+ * OWASP: Validate access token on every protected request.
+ * Checks: signature → expiry → denylist → tokenVersion → session active → user status.
+ */
+export async function authenticate(
   req: Request,
   _res: Response,
   next: NextFunction,
-): void => {
-  const authHeader = req.headers.authorization;
+) {
+  try {
+    const token =
+      req.cookies?.[COOKIE_NAMES.ACCESS_TOKEN] ??
+      req.headers.authorization?.replace("Bearer ", "");
 
-  // Must be: "Bearer <token>"
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new AppError(401, "Access token required");
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  if (!token) {
-    throw new AppError(401, "Access token required");
-  }
-
-  req.user = verifyToken(token);
-
-  logger.debug(
-    `Authenticated: ${req.user.email} (${req.user.role})`,
-    req.requestId,
-  );
-
-  next();
-};
-
-// ── Role guard (use after authenticate) ──────────────────────────────
-export const authorize = (...roles: AuthUser["role"][]): RequestHandler => {
-  return (req: Request, _res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      throw new AppError(401, "Not authenticated");
+    if (!token) {
+      throw new UnauthorizedError("Access token required");
     }
 
-    if (!roles.includes(req.user.role)) {
-      throw new AppError(403, "Insufficient permissions", {
-        required: roles,
-        current: req.user.role,
-      });
+    // 1. Verify signature + expiry (jose)
+    const payload = await verifyAccessToken(token);
+
+    // 2. Check denylist (Redis fast path)
+    if (payload.jti && (await denylistService.isDenied(payload.jti))) {
+      throw new UnauthorizedError("Token revoked");
     }
 
+    // 3. Verify tokenVersion (invalidated on password change / admin action)
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub! },
+      select: { tokenVersion: true, status: true },
+    });
+
+    if (!user) throw new UnauthorizedError("User not found");
+    if (user.status === "BANNED") throw new ForbiddenError("Account suspended");
+    if (payload.tv !== user.tokenVersion) {
+      throw new UnauthorizedError("Token invalidated — please sign in again");
+    }
+
+    // 4. Verify session is still active
+    if (payload.sid && !(await sessionService.isActive(payload.sid))) {
+      throw new UnauthorizedError("Session expired or revoked");
+    }
+
+    req.user = payload;
     next();
-  };
-};
+  } catch (err) {
+    next(
+      err instanceof UnauthorizedError || err instanceof ForbiddenError
+        ? err
+        : new UnauthorizedError("Invalid token"),
+    );
+  }
+}

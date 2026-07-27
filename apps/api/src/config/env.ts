@@ -19,8 +19,8 @@ const envSchema = z
     // JWT
     JWT_ACCESS_SECRET: z.string().min(64),
     JWT_REFRESH_SECRET: z.string().min(64),
-    JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
-    JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+    ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().default(300),
+    REFRESH_TOKEN_TTL_SECONDS: z.coerce.number().default(604800),
     JWT_ISSUER: z.string().default("http://localhost:4000"),
     JWT_AUDIENCE: z.string().default("http://localhost:4000"),
 
@@ -34,10 +34,7 @@ const envSchema = z
     COOKIE_DOMAIN: z.string().optional(),
     COOKIE_SECURE: z.coerce.boolean().default(true),
 
-    // argon2
-    ENCRYPT_ROUNDS: z.coerce.number().default(12),
-
-    CORS_ORIGIN: z.string().optional()
+    CORS_ORIGIN: z.string().optional(),
   })
   .transform((env) => ({
     ...env,

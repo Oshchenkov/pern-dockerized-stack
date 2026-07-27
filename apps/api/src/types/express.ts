@@ -1,7 +1,9 @@
+import { type AccessTokenPayload } from "#src/services/token.service";
+
 declare global {
   namespace Express {
     interface Request {
-      user?: AuthUser;
+      user?: AccessTokenPayload;
       requestId: string;
       requestTime: string;
       validated?: Record<string, unknown>;

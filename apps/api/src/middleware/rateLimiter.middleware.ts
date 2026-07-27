@@ -27,16 +27,11 @@ export const limiter = (overrides: LimiterOptions = {}): RequestHandler => {
       // @ts-expect-error – ioredis v5 compat
       sendCommand: (...args: string[]) => redis.call(...args),
     }),
-
     windowMs,
     max,
-
     standardHeaders: "draft-8",
     legacyHeaders: false,
-
     keyGenerator: (req: Request) => `${req.ip}:${req.baseUrl}${req.path}`,
-
-    // ✅ Use global response formatter
     handler: (req: Request, res: Response) => {
       logger.warn(
         `Rate limit exceeded: ${req.method} ${req.originalUrl}`,
