@@ -96,6 +96,7 @@ services:
       COOKIE_DOMAIN: ${COOKIE_DOMAIN}
       COOKIE_SECURE: ${COOKIE_SECURE}
       ENCRYPT_ROUNDS: ${ENCRYPT_ROUNDS}
+      CORS_ORIGIN: ${CORS_ORIGIN}
     healthcheck:
       test:
         [
