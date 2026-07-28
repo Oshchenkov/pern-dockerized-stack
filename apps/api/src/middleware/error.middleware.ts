@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../utils/logger.js";
+import { logger } from "#src/config/logger";
 
 // ── Custom Error Class ───────────────────────────────────────────────
 export class AppError extends Error {
@@ -103,10 +103,14 @@ export const errorHandler = (
   }
 
   // ── Unknown / unhandled errors ───────────────────────────────────
-  logger.error(`Unhandled error: ${err.message}`, req.requestId, {
-    stack: err.stack,
-    path: req.originalUrl,
-  });
+  logger.error(
+    {
+      stack: err.stack,
+      path: req.originalUrl,
+      requestId: req.requestId,
+    },
+    `Unhandled error: ${err.message}`,
+  );
 
   const data =
     process.env.NODE_ENV === "development" ? { stack: err.stack } : null;

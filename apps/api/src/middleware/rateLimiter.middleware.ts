@@ -2,7 +2,7 @@ import { Request, Response, RequestHandler } from "express";
 import rateLimit from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import { redis } from "../config/redis.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "#src/config/logger";
 
 // ── Types ────────────────────────────────────────────────────────────
 interface LimiterOptions {
@@ -34,11 +34,11 @@ export const limiter = (overrides: LimiterOptions = {}): RequestHandler => {
     keyGenerator: (req: Request) => `${req.ip}:${req.baseUrl}${req.path}`,
     handler: (req: Request, res: Response) => {
       logger.warn(
-        `Rate limit exceeded: ${req.method} ${req.originalUrl}`,
-        req.requestId,
         {
           ip: req.ip,
+          requestId: req.requestId,
         },
+        `Rate limit exceeded: ${req.method} ${req.originalUrl}`,
       );
 
       res.sendResponse(429, null, message);

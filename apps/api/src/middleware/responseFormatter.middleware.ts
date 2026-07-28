@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { sendResponse } from "../utils/responseFormatter";
 
-export const responseFormatterMiddleware = (
+export const responseFormatter = (
   req: Request,
   res: Response,
   next: NextFunction,
