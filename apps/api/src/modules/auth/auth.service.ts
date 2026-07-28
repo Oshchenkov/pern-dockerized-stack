@@ -22,6 +22,7 @@ import {
 } from "#src/middleware/error.middleware";
 import { logger } from "#src/config/logger";
 import type { SignUpInput, SignInInput } from "./auth.schema";
+import { issueTokens } from "#src/services/session.service";
 
 export const authService = {
   // ─── SIGN UP ────────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ export const authService = {
     });
 
     // Create session + tokens
-    const tokens = await this._issueTokens(user.id, user.tokenVersion, meta);
+    const tokens = await issueTokens(user.id, user.tokenVersion, meta);
 
     return { userId: user.id, alreadyExists: false, ...tokens };
   },
@@ -101,7 +102,7 @@ export const authService = {
       throw new UnauthorizedError(GENERIC_ERROR);
     }
 
-    const tokens = await this._issueTokens(user.id, user.tokenVersion, meta);
+    const tokens = await issueTokens(user.id, user.tokenVersion, meta);
 
     return { userId: user.id, ...tokens };
   },
@@ -238,49 +239,5 @@ export const authService = {
         expiresAt: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
       });
     }
-  },
-
-  // ─── INTERNAL: Issue token pair + create session ────────────────────────
-  async _issueTokens(
-    userId: string,
-    tokenVersion: number,
-    meta: { ip?: string; ua?: string },
-  ) {
-    const refreshRaw = generateOpaqueToken();
-
-    // Create session first to get sessionId
-    const session = await sessionService.create({
-      userId,
-      refreshToken: refreshRaw, // hashed inside
-      ipAddress: meta.ip,
-      userAgent: meta.ua,
-    });
-
-    const accessToken = await signAccessToken({
-      userId,
-      sessionId: session.id,
-      tokenVersion,
-    });
-
-    const refreshToken = await signRefreshToken({
-      userId,
-      sessionId: session.id,
-      familyId: session.familyId,
-      tokenVersion,
-    });
-
-    // Update session hash to the JWT refresh token (so rotate() can find it)
-    const { hashToken } = await import("#src/utils/crypto");
-    await prisma.userSession.update({
-      where: { id: session.id },
-      data: { refreshTokenHash: hashToken(refreshToken) },
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-      accessExpiresIn: ACCESS_TOKEN_TTL,
-      refreshExpiresIn: REFRESH_TOKEN_TTL,
-    };
   },
 };

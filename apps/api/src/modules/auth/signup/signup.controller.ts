@@ -1,1 +1,60 @@
 // Handles HTTP requests
+// src/modules/auth/auth.controller.ts
+import type { Request, Response, NextFunction } from "express";
+import { COOKIE_NAMES } from "#src/utils/constants";
+import { env } from "#src/config/env";
+import type { SignUpInput } from "./signup.validation";
+import { signUpService } from "./signup.service";
+import { logger } from "#src/config/logger";
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: env.COOKIE_SECURE,
+  sameSite: "strict" as const,
+  path: "/",
+  domain: env.COOKIE_DOMAIN,
+};
+
+export async function signUpController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const input = req.body as SignUpInput;
+    const result = await signUpService(input, {
+      ip: req.ip,
+      ua: req.headers["user-agent"],
+    });
+
+    // logger.warn({ result }, "SIGN UP");
+
+    if (result.alreadyExists) {
+      // OWASP: Return 201 to prevent enumeration
+      res.status(201).json({
+        message: "If this email is not registered, an account will be created.",
+      });
+    }
+
+    if ("accessToken" in result) {
+      // Set cookies
+      res.cookie(COOKIE_NAMES.ACCESS_TOKEN, result.accessToken, {
+        ...cookieOptions,
+        maxAge: result.accessExpiresIn * 1000,
+      });
+      res.cookie(COOKIE_NAMES.REFRESH_TOKEN, result.refreshToken, {
+        ...cookieOptions,
+        maxAge: result.refreshExpiresIn * 1000,
+        path: "/auth/refresh", // restrict refresh cookie path (OWASP)
+      });
+    }
+
+    res.status(201).json({
+      message: "Account created successfully",
+      userId: result.userId,
+      result,
+    });
+  } catch (err) {
+    next(err);
+  }
+}

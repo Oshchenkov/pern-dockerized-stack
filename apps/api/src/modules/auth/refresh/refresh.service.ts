@@ -1,5 +1,5 @@
 import crypto, { randomUUID } from "crypto";
-import { hashToken } from "#src/utils/handleToken";
+import { hashToken } from "#src/utils/crypto";
 import { issueAccessToken, ACCESS_TOKEN_TTL_SECONDS } from "#src/utils/jwt";
 import { prisma } from "#src/config/prisma";
 

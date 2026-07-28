@@ -1,6 +1,8 @@
 // src/utils/crypto.ts
-import { randomBytes, timingSafeEqual, randomUUID } from "node:crypto";
+import crypto, { randomBytes, timingSafeEqual, randomUUID } from "node:crypto";
+
 import argon2 from "argon2";
+
 
 export async function hashPassword(password: string): Promise<string> {
   try {
@@ -47,8 +49,7 @@ export function generateJti(): string {
 
 /** Hash a refresh token for storage (SHA-256 is sufficient for high-entropy random tokens). */
 export function hashToken(token: string): string {
-  const { createHash } = require("node:crypto");
-  return createHash("sha256").update(token).digest("hex");
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 /** Timing-safe string comparison. */

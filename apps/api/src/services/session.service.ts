@@ -1,10 +1,21 @@
 // src/services/session.service.ts
 import { prisma } from "#src/config/prisma";
-import { hashToken } from "#src/utils/crypto";
 import { env } from "#src/config/env";
 import { logger } from "#src/config/logger";
 
-const REFRESH_TOKEN_TTL = env.REFRESH_TOKEN_TTL_SECONDS;
+import {
+  hashToken,
+  hashPassword,
+  verifyPassword,
+  generateOpaqueToken,
+} from "#src/utils/crypto";
+import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+  ACCESS_TOKEN_TTL,
+  REFRESH_TOKEN_TTL,
+} from "#src/services/token.service";
 
 export const sessionService = {
   /**
@@ -166,3 +177,47 @@ export const sessionService = {
     return count;
   },
 };
+
+// ─── INTERNAL: Issue token pair + create session ────────────────────────
+export async function issueTokens(
+  userId: string,
+  tokenVersion: number,
+  meta: { ip?: string; ua?: string },
+) {
+  const refreshRaw = generateOpaqueToken();
+
+  // Create session first to get sessionId
+  const session = await sessionService.create({
+    userId,
+    refreshToken: refreshRaw, // hashed inside
+    ipAddress: meta.ip,
+    userAgent: meta.ua,
+  });
+
+  const accessToken = await signAccessToken({
+    userId,
+    sessionId: session.id,
+    tokenVersion,
+  });
+
+  const refreshToken = await signRefreshToken({
+    userId,
+    sessionId: session.id,
+    familyId: session.familyId,
+    tokenVersion,
+  });
+
+  // Update session hash to the JWT refresh token (so rotate() can find it)
+  const { hashToken } = await import("#src/utils/crypto");
+  await prisma.userSession.update({
+    where: { id: session.id },
+    data: { refreshTokenHash: hashToken(refreshToken) },
+  });
+
+  return {
+    accessToken,
+    refreshToken,
+    accessExpiresIn: ACCESS_TOKEN_TTL,
+    refreshExpiresIn: REFRESH_TOKEN_TTL,
+  };
+}

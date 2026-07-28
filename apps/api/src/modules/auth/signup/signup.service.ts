@@ -1,8 +1,12 @@
 // Business logic
 import { logger } from "#src/config/logger";
+import { prisma } from "#src/config/prisma";
 import { SignUpInput } from "./signup.validation";
+import { hashPassword } from "#src/utils/crypto";
+import { issueTokens } from "#src/services/session.service";
+import { UserStatus } from "#root/prisma/generated/prisma/enums";
 
-export async function signUp(
+export async function signUpService(
   input: SignUpInput,
   meta: { ip?: string; ua?: string },
 ) {
@@ -29,7 +33,7 @@ export async function signUp(
       data: {
         primaryEmail: input.email,
         primaryEmailVerified: false,
-        status: "ACTIVE",
+        status: UserStatus.ACTIVE,
         credential: {
           create: { passwordHash },
         },
@@ -45,7 +49,7 @@ export async function signUp(
   });
 
   // Create session + tokens
-  const tokens = await this._issueTokens(user.id, user.tokenVersion, meta);
+  const tokens = await issueTokens(user.id, user.tokenVersion, meta);
 
   return { userId: user.id, alreadyExists: false, ...tokens };
 }
