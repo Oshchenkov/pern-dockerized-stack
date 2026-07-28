@@ -11,6 +11,3 @@ export const TOKEN_TYPES = {
 
 export const DENYLIST_PREFIX = "denylist:jti:";
 export const RATE_LIMIT_PREFIX = "rl:";
-
-// Refresh token rotation: reuse detection window
-export const SESSION_REUSE_WINDOW_MS = 30_000; // 30s grace for concurrent requests
