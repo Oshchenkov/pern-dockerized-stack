@@ -1,7 +1,7 @@
 // src/services/denylist.service.ts
 import { redis } from "#src/config/redis";
 import { prisma } from "#src/config/prisma";
-import pinoLogger from "#src/config/pinoLogger";
+import { logger } from "#src/config/logger";
 import { DENYLIST_PREFIX } from "#src/utils/constants";
 
 /**
@@ -34,7 +34,7 @@ export const denylistService = {
         );
       }
     } catch (err) {
-      pinoLogger.warn({ err }, "Redis denylist SET failed; PG fallback active");
+      logger.warn({ err }, "Redis denylist SET failed; PG fallback active");
     }
 
     // PostgreSQL durable record
@@ -58,7 +58,7 @@ export const denylistService = {
       const val = await redis.get(`${DENYLIST_PREFIX}${jti}`);
       if (val !== null) return true;
     } catch (err) {
-      pinoLogger.warn({ err }, "Redis denylist GET failed; checking PG");
+      logger.warn({ err }, "Redis denylist GET failed; checking PG");
     }
 
     // PG fallback

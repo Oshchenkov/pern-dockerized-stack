@@ -2,7 +2,7 @@
 import { prisma } from "#src/config/prisma";
 import { hashToken } from "#src/utils/crypto";
 import { env } from "#src/config/env";
-import pinoLogger from "#src/config/pinoLogger";
+import { logger } from "#src/config/logger";
 
 const REFRESH_TOKEN_TTL = env.REFRESH_TOKEN_TTL_SECONDS;
 
@@ -62,7 +62,7 @@ export const sessionService = {
     // --- REUSE DETECTION ---
     if (oldSession.status === "REVOKED") {
       // Someone replayed an old token → compromise detected.
-      pinoLogger.warn(
+      logger.warn(
         {
           sessionId: oldSession.id,
           familyId: oldSession.familyId,

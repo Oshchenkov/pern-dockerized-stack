@@ -1,8 +1,8 @@
 import pino from "pino";
 import { env } from "./env";
 
-const pinoLogger = pino({
-  level: "error",
+export const logger = pino({
+  level: env.isDevelopment ? "info" : "error",
 
   timestamp: pino.stdTimeFunctions.isoTime,
 
@@ -31,5 +31,3 @@ const pinoLogger = pino({
       }
     : {}),
 });
-
-export default pinoLogger;
