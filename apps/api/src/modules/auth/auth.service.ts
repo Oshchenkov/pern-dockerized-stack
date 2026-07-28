@@ -20,7 +20,7 @@ import {
   ForbiddenError,
   BadRequestError,
 } from "#src/middleware/error.middleware";
-import { logger } from "#src/config/pino.logger";
+import pinoLogger from "#src/config/pinoLogger";
 import type { SignUpInput, SignInInput } from "./auth.schema";
 
 export const authService = {
@@ -35,7 +35,7 @@ export const authService = {
     if (existing) {
       // OWASP: Do NOT reveal whether the email exists.
       // Return success-like response; send a "you already have an account" email async.
-      logger.info(
+      pinoLogger.info(
         { email: input.email },
         "Sign-up attempted with existing email",
       );

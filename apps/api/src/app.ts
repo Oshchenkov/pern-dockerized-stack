@@ -11,7 +11,7 @@ import { greet } from "@repo/shared-types";
 import { v1Router } from "#src/routes/index";
 import { pinoHttp } from "pino-http";
 import { randomUUID } from "node:crypto";
-import { logger } from "#src/config/pino.logger";
+import pinoLogger from "#src/config/pinoLogger";
 // import { authenticate, authorize } from "./middleware/auth.middleware.js";
 
 const app: Application = express();
@@ -39,7 +39,7 @@ app.use(responseTracker); // 3. hook 'finish' for outgoing log
 app.use(responseFormatterMiddleware); // 4. attach res.sendResponse
 app.use(
   pinoHttp({
-    logger,
+    logger: pinoLogger,
     genReqId: () => randomUUID(),
     customLogLevel: (_req, res, err) => {
       if (err || res.statusCode >= 500) {
