@@ -1,5 +1,5 @@
 import { Request, Response, RequestHandler } from "express";
-import rateLimit from "express-rate-limit";
+import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import { redis } from "../config/redis.js";
 import { logger } from "#src/config/logger";
@@ -31,7 +31,10 @@ export const limiter = (overrides: LimiterOptions = {}): RequestHandler => {
     max,
     standardHeaders: "draft-8",
     legacyHeaders: false,
-    keyGenerator: (req: Request) => `${req.ip}:${req.baseUrl}${req.path}`,
+    keyGenerator: (req: Request) => {
+      const safeIp = ipKeyGenerator(req.ip ?? "");
+      return `${safeIp}:${req.baseUrl}${req.path}`;
+    },
     handler: (req: Request, res: Response) => {
       logger.warn(
         {

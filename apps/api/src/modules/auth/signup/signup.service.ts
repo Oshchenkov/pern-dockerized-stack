@@ -1,4 +1,6 @@
 // Business logic
+import { logger } from "#src/config/logger";
+import { SignUpInput } from "./signup.validation";
 
 export async function signUp(
   input: SignUpInput,
