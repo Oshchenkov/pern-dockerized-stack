@@ -31,9 +31,11 @@ export async function signUpController(
 
     if (result.alreadyExists) {
       // OWASP: Return 201 to prevent enumeration
-      res.status(201).json({
-        message: "If this email is not registered, an account will be created.",
-      });
+      res.sendResponse(
+        201,
+        null,
+        "If this email is not registered, an account will be created.",
+      );
     }
 
     if ("accessToken" in result) {
@@ -49,11 +51,14 @@ export async function signUpController(
       });
     }
 
-    res.status(201).json({
-      message: "Account created successfully",
-      userId: result.userId,
-      result,
-    });
+    res.sendResponse(
+      201,
+      {
+        userId: result.userId,
+        result,
+      },
+      "Account created successfully",
+    );
   } catch (err) {
     next(err);
   }
