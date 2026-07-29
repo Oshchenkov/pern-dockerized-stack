@@ -78,6 +78,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${API_PORT:-4000}
+      CLIENT_URL: http://localhost:${CLIENT_PORT:-3000}
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-app}
       REDIS_URL: redis://:${REDIS_PASSWORD}@${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
@@ -118,6 +119,8 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    environment:
+      API_URL: http://localhost:${API_PORT:-4000}
     # Ports are extended in the environment-specific files
 
   # ---------------------------------------------------------------------------
@@ -130,6 +133,8 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    environment:
+      API_URL: http://localhost:${API_PORT:-4000}
 
 volumes:
   postgres_pern_data:

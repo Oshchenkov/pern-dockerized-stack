@@ -22,7 +22,14 @@ console.log(
 // ==============================
 // Security middleware
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: ["https://localhost:3000", "http://localhost:3000"], // Allows only your client origin
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allowed custom headers
+    credentials: true, // Crucial if you plan to send SameSite cookies/sessions
+  }),
+);
 app.use(compression());
 
 // Body parsing
