@@ -52,6 +52,18 @@ services:
       - /app/shared/packages/shared-types/node_modules
       - /app/shared/packages/shared-types/dist
       - ./cert/tls:/certs/tls:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('https').get('https://localhost:${API_PORT:-4000}/api/v1/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
   # ---------------------------------------------------------------------------
   # Client — Next ts dev server with hot-reload
@@ -93,6 +105,8 @@ services:
       - /app/apps/admin/node_modules
       - /app/apps/admin/.tanstack
       - /app/apps/admin/.vscode
+      - ./cert/tls:/certs/tls:ro
+
     command: ["pnpm", "dev"]
 
 volumes:
