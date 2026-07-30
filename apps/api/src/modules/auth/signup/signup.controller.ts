@@ -2,17 +2,10 @@
 // src/modules/auth/auth.controller.ts
 import type { Request, Response, NextFunction } from "express";
 import { COOKIE_NAMES } from "#src/utils/constants";
-import { env } from "#src/config/env";
 import type { SignUpInput } from "./signup.validation";
 import { signUpService } from "./signup.service";
 import { logger } from "#src/config/logger";
-
-const cookieOptions = {
-  httpOnly: true, // block browser js access
-  secure: env.COOKIE_SECURE, // HTTPS only
-  sameSite: "strict" as const,
-  path: "/",
-};
+import { setCookie } from "#src/utils/cookieHandler";
 
 export async function signUpController(
   req: Request,
@@ -38,15 +31,13 @@ export async function signUpController(
     }
 
     if ("accessToken" in result) {
-      // Set cookies
-      res.cookie(COOKIE_NAMES.ACCESS_TOKEN, result.accessToken, {
-        ...cookieOptions,
+      setCookie(res, COOKIE_NAMES.ACCESS_TOKEN, result.accessToken, {
         maxAge: result.accessExpiresIn * 1000,
       });
-      res.cookie(COOKIE_NAMES.REFRESH_TOKEN, result.refreshToken, {
-        ...cookieOptions,
+
+      setCookie(res, COOKIE_NAMES.REFRESH_TOKEN, result.refreshToken, {
         maxAge: result.refreshExpiresIn * 1000,
-        path: "/auth/refresh", // restrict refresh cookie path (OWASP)
+        path: "/auth/refresh",
       });
     }
 
