@@ -21,20 +21,25 @@ const envSchema = z
     JWT_REFRESH_SECRET: z.string().min(64),
     ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().default(300),
     REFRESH_TOKEN_TTL_SECONDS: z.coerce.number().default(604800),
-    JWT_ISSUER: z.string().default("http://localhost:4000"),
-    JWT_AUDIENCE: z.string().default("http://localhost:4000"),
+    JWT_ISSUER: z.string(),
+    JWT_AUDIENCE: z.string(),
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900_000), // 15 min
     RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
-    AUTH_RATE_LIMIT_MAX: z.coerce.number().default(5),
-    AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900_000),
 
     // Cookie
-    COOKIE_DOMAIN: z.string().optional(),
-    COOKIE_SECURE: z.coerce.boolean().default(true),
+    COOKIE_SECURE: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((val) => val === "true"),
 
-    CORS_ORIGIN: z.string().optional(),
+    ALLOWED_ORIGINS: z
+      .string()
+      // Splits the string by commas into an array
+      .transform((str) => str.split(","))
+      // Optional: Ensures the array isn't empty
+      .pipe(z.array(z.url()).min(1)),
   })
   .transform((env) => ({
     ...env,

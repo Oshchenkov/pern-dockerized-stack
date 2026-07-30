@@ -9,10 +9,9 @@ import { logger } from "#src/config/logger";
 
 const cookieOptions = {
   httpOnly: true,
-  secure: env.COOKIE_SECURE,
+  secure: env.COOKIE_SECURE, // HTTPS only
   sameSite: "strict" as const,
   path: "/",
-  domain: env.COOKIE_DOMAIN,
 };
 
 export async function signUpController(

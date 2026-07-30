@@ -9,6 +9,7 @@ import { v1Router } from "#src/routes/index";
 import { pinoHttp } from "pino-http";
 import { randomUUID } from "node:crypto";
 import { logger } from "#src/config/logger";
+import { env } from "#src/config/env";
 // import { authenticate, authorize } from "./middleware/auth.middleware.js";
 
 const app: Application = express();
@@ -24,7 +25,7 @@ console.log(
 app.use(helmet());
 app.use(
   cors({
-    origin: ["https://localhost:3000", "http://localhost:3000"], // Allows only your client origin
+    origin: env.ALLOWED_ORIGINS, // Allows only your client origin
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed custom headers
     credentials: true, // Crucial if you plan to send SameSite cookies/sessions
