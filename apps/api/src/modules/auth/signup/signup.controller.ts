@@ -8,7 +8,7 @@ import { signUpService } from "./signup.service";
 import { logger } from "#src/config/logger";
 
 const cookieOptions = {
-  httpOnly: true,
+  httpOnly: true, // block browser js access
   secure: env.COOKIE_SECURE, // HTTPS only
   sameSite: "strict" as const,
   path: "/",

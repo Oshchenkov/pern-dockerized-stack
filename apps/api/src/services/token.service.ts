@@ -49,8 +49,8 @@ export interface RefreshTokenPayload extends AccessTokenBasePayload {
 }
 
 const alg = "HS256";
-const issuer = env.JWT_ISSUER!;
-const audience = env.JWT_AUDIENCE!;
+const issuer = env.JWT_ISSUER;
+const audience = env.JWT_AUDIENCE;
 const refreshSecret = new TextEncoder().encode(env.JWT_REFRESH_SECRET);
 const accessSecret = new TextEncoder().encode(env.JWT_ACCESS_SECRET);
 export const ACCESS_TOKEN_TTL = env.ACCESS_TOKEN_TTL_SECONDS;

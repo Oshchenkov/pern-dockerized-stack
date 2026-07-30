@@ -1,4 +1,3 @@
-// src/utils/constants.ts
 export const COOKIE_NAMES = {
   ACCESS_TOKEN: "__Host-Http-at",
   REFRESH_TOKEN: "__Secure-rt",
