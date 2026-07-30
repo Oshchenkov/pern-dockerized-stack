@@ -5,7 +5,8 @@
   "type": "module",
   "author": "Oshchenkov",
   "scripts": {
-    "dev": "next dev",
+    "dev:old": "next dev",
+    "dev": "next dev --experimental-https --experimental-https-key /certs/tls/tls.key --experimental-https-cert /certs/tls/tls.crt --port 3000 --hostname 0.0.0.0",
     "build": "next build",
     "build.w": "next build --webpack",
     "start": "next start",

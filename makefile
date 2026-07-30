@@ -9,7 +9,7 @@ PROD_COMPOSE_FILE=docker-compose.prod.yaml
 #  DEV TARGETS
 # ---------------------------------------------------------------------------
 
-.PHONY:  build build.clean up stop down clean watch
+.PHONY:  build build.clean up stop down clean watch certs extract-ca trust trust-mac trust-linux setup
 
 build:
 	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} build 
@@ -31,6 +31,34 @@ down:
 
 clean:
 	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} down --volumes --remove-orphans
+
+certs:
+	$(COMPOSE) up --build certs
+
+extract-ca:
+	@mkdir -p ./cert/certs/ca
+	$(COMPOSE) run --rm --entrypoint "" certs cat /certs/ca/ca.crt > ./cert/certs/ca/ca.crt
+	$(COMPOSE) run --rm --entrypoint "" certs cat /certs/ca/ca.key > ./cert/certs/ca/ca.key
+	@echo "CA extracted to ./cert/certs/ca/"
+
+trust: extract-ca
+	@uname -s | grep -q Darwin && $(MAKE) trust-mac || $(MAKE) trust-linux
+
+trust-mac:
+	@echo "Installing local CA into macOS trust store..."
+	sudo security add-trusted-cert -d -r trustRoot \
+		-k /Library/Keychains/System.keychain \
+		./cert/certs/ca/ca.crt
+	@echo "Done. Restart your browser."
+
+trust-linux:
+	@echo "Installing local CA into Linux trust store..."
+	sudo cp ./cert/certs/ca/ca.crt /usr/local/share/ca-certificates/local-dev-ca.crt
+	sudo update-ca-certificates
+	@echo "Done. Restart your browser."
+
+setup: certs trust
+	@echo "Setup complete. Run 'make up' to start."
 
 # ---------------------------------------------------------------------------
 #  PROD TARGETS

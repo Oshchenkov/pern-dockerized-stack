@@ -1,9 +1,16 @@
 import "dotenv/config";
+import https from "node:https";
+import http from "node:http";
+import fs from "node:fs";
 import app from "./app.js";
 import { prisma } from "#src/config/prisma";
-import { redis, redisExecuteWhenConnected } from "#src/config/redis";
+import { redis } from "#src/config/redis";
+import { env } from "./config/env";
+import { logger } from "./config/logger";
 
 const PORT = process.env.PORT;
+const TLS_CERT = "/certs/tls/tls.crt";
+const TLS_KEY = "/certs/tls/tls.key";
 
 if (!PORT) {
   throw new Error("❌ CRITICAL: PORT environment variable is not defined!");
@@ -68,8 +75,29 @@ const startServer = async () => {
     await Promise.all([testPrismaConnection(), testRedisConnection()]);
 
     // Start Express App ONLY if connections are successful
-    server = app.listen(PORT, () => {
-      console.log(`\n🚀 Server running at http://localhost:${PORT}`);
+    // server = app.listen(PORT, () => {
+    //   console.log(`\n🚀 Server running at http://localhost:${PORT}`);
+    // });
+
+    function createServer() {
+      if (env.isDevelopment && fs.existsSync(TLS_CERT)) {
+        return https.createServer(
+          {
+            cert: fs.readFileSync(TLS_CERT),
+            key: fs.readFileSync(TLS_KEY),
+          },
+          app,
+        );
+      }
+
+      return http.createServer(app);
+    }
+
+    server = createServer();
+
+    server.listen(env.PORT, () => {
+      const proto = server instanceof https.Server ? "https" : "http";
+      logger.info(`API → ${proto}://localhost:${env.PORT}`);
     });
 
     // ==========================================

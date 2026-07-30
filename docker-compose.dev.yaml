@@ -51,6 +51,7 @@ services:
       - /app/apps/api/node_modules
       - /app/shared/packages/shared-types/node_modules
       - /app/shared/packages/shared-types/dist
+      - ./cert/tls:/certs/tls:ro
 
   # ---------------------------------------------------------------------------
   # Client — Next ts dev server with hot-reload
@@ -70,6 +71,7 @@ services:
       - /app/node_modules
       - /app/apps/client/node_modules
       - /app/apps/client/.next
+      - ./cert/tls:/certs/tls:ro
     command: ["pnpm", "dev"]
 
   # ---------------------------------------------------------------------------
