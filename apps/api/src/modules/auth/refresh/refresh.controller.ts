@@ -9,7 +9,7 @@ import {
   setRefreshTokenCookie,
 } from "#src/utils/cookieHandler";
 
-export async function refresh(req: Request, res: Response, next: NextFunction) {
+export async function refreshController(req: Request, res: Response, next: NextFunction) {
   try {
     const refreshToken = req.cookies?.[COOKIE_NAMES.REFRESH_TOKEN];
     if (!refreshToken) {

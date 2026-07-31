@@ -1,7 +1,7 @@
 import { UnauthorizedError } from "#src/middleware/error.middleware";
 import { NextFunction, Request, Response } from "express";
 
-export async function me(req: Request, res: Response, next: NextFunction) {
+export async function meController(req: Request, res: Response, next: NextFunction) {
   try {
     // req.user is set by authenticate middleware
     const user = await (
