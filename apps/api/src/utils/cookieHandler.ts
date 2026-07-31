@@ -39,7 +39,7 @@ export function setAccessTokenCookie(res: Response, token: string) {
 export function setRefreshTokenCookie(res: Response, token: string) {
   setCookie(res, COOKIE_NAMES.REFRESH_TOKEN, token, {
     maxAge: REFRESH_TOKEN_TTL * 1000,
-    path: "/auth/refresh",
+    path: "/api/v1/auth/refresh",
   });
 }
 
@@ -48,5 +48,7 @@ export function clearAccessTokenCookie(res: Response) {
 }
 
 export function clearRefreshTokenCookie(res: Response) {
-  clearCookie(res, COOKIE_NAMES.REFRESH_TOKEN, { path: "/auth/refresh" });
+  clearCookie(res, COOKIE_NAMES.REFRESH_TOKEN, {
+    path: "/api/v1/auth/refresh",
+  });
 }

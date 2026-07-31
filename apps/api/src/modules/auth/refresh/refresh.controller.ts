@@ -8,10 +8,16 @@ import {
   setAccessTokenCookie,
   setRefreshTokenCookie,
 } from "#src/utils/cookieHandler";
+import { logger } from "#src/config/logger";
 
-export async function refreshController(req: Request, res: Response, next: NextFunction) {
+export async function refreshController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const refreshToken = req.cookies?.[COOKIE_NAMES.REFRESH_TOKEN];
+
     if (!refreshToken) {
       throw new UnauthorizedError("Refresh token missing");
     }

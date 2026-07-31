@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import { responseFormatter } from "./middleware/responseFormatter.middleware.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";
 import { greet } from "@repo/shared-types";
@@ -36,6 +37,7 @@ app.use(compression());
 // Body parsing
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Custom middlewares
 app.use(responseFormatter); //  attach res.sendResponse
