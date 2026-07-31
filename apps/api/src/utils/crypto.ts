@@ -3,7 +3,6 @@ import crypto, { randomBytes, timingSafeEqual, randomUUID } from "node:crypto";
 
 import argon2 from "argon2";
 
-
 export async function hashPassword(password: string): Promise<string> {
   try {
     return await argon2.hash(password, {
@@ -26,8 +25,8 @@ export async function hashPassword(password: string): Promise<string> {
  * from the stored hash string format.
  */
 export async function verifyPassword(
-  hash: string,
   password: string,
+  hash: string,
 ): Promise<boolean> {
   try {
     return await argon2.verify(hash, password);

@@ -37,12 +37,11 @@ export async function signUpService(
         credential: {
           create: { passwordHash },
         },
-        // profile: {
-        //   create: {
-        //     name: input.name ?? null,
-        //     surname: input.surname ?? null,
-        //   },
-        // },
+        profile: {
+          create: {
+            profileInfo: meta,
+          },
+        },
       },
     });
     return newUser;
