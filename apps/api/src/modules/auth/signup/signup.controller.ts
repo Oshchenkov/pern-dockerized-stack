@@ -1,11 +1,10 @@
-// Handles HTTP requests
-// src/modules/auth/auth.controller.ts
 import type { Request, Response, NextFunction } from "express";
-import { COOKIE_NAMES } from "#src/utils/constants";
 import type { SignUpInput } from "./signUp.validation";
 import { signUpService } from "./signUp.service";
-import { logger } from "#src/config/logger";
-import { setCookie } from "#src/utils/cookieHandler";
+import {
+  setAccessTokenCookie,
+  setRefreshTokenCookie,
+} from "#src/utils/cookieHandler";
 
 export async function signUpController(
   req: Request,
@@ -19,8 +18,6 @@ export async function signUpController(
       ua: req.headers["user-agent"],
     });
 
-    // logger.warn({ result }, "SIGN UP");
-
     if (result.alreadyExists) {
       // OWASP: Return 201 to prevent enumeration
       res.sendResponse(
@@ -31,14 +28,8 @@ export async function signUpController(
     }
 
     if ("accessToken" in result) {
-      setCookie(res, COOKIE_NAMES.ACCESS_TOKEN, result.accessToken, {
-        maxAge: result.accessExpiresIn * 1000,
-      });
-
-      setCookie(res, COOKIE_NAMES.REFRESH_TOKEN, result.refreshToken, {
-        maxAge: result.refreshExpiresIn * 1000,
-        path: "/auth/refresh",
-      });
+      setAccessTokenCookie(res, result.accessToken);
+      setRefreshTokenCookie(res, result.refreshToken);
     }
 
     res.sendResponse(

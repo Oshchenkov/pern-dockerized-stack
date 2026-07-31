@@ -1,7 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import { SignInInput } from "./signIn.validation";
 import { signInService } from "./signIn.service";
-import { setCookie } from "#src/utils/cookieHandler";
+import {
+  setAccessTokenCookie,
+  setRefreshTokenCookie,
+} from "#src/utils/cookieHandler";
 import { COOKIE_NAMES } from "#src/utils/constants";
 
 export async function signInController(
@@ -16,14 +19,8 @@ export async function signInController(
       ua: req.headers["user-agent"],
     });
 
-    setCookie(res, COOKIE_NAMES.ACCESS_TOKEN, result.accessToken, {
-      maxAge: result.accessExpiresIn * 1000,
-    });
-
-    setCookie(res, COOKIE_NAMES.REFRESH_TOKEN, result.refreshToken, {
-      maxAge: result.refreshExpiresIn * 1000,
-      path: "/auth/refresh",
-    });
+    setAccessTokenCookie(res, result.accessToken);
+    setRefreshTokenCookie(res, result.refreshToken);
 
     res.sendResponse(
       200,

@@ -17,7 +17,21 @@
 
   "customizations": {
     "vscode": {
-      "extensions": ["esbenp.prettier-vscode"],
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "Prisma.prisma",
+        "bradlc.vscode-tailwindcss",
+        "dsznajder.es7-react-js-snippets",
+        "planbcoding.vscode-react-refactor",
+        "wix.vscode-import-cost",
+        "stylelint.vscode-stylelint",
+        "burkeholland.simple-react-snippets",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "Tobermory.es6-string-html",
+        "eamodio.gitlens",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
+      ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
