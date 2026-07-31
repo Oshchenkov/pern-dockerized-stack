@@ -7,20 +7,20 @@ import { logger } from "#src/config/logger";
 // ── Types ────────────────────────────────────────────────────────────
 interface LimiterOptions {
   windowMs?: number;
-  max?: number;
+  limit?: number;
   message?: string;
 }
 
 // ── Defaults ─────────────────────────────────────────────────────────
 const DEFAULTS: Required<LimiterOptions> = {
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  limit: 100,
   message: "Too many requests, slow down!",
 };
 
 // ── Factory ──────────────────────────────────────────────────────────
 export const limiter = (overrides: LimiterOptions = {}): RequestHandler => {
-  const { windowMs, max, message } = { ...DEFAULTS, ...overrides };
+  const { windowMs, limit, message } = { ...DEFAULTS, ...overrides };
 
   return rateLimit({
     store: new RedisStore({
@@ -28,7 +28,7 @@ export const limiter = (overrides: LimiterOptions = {}): RequestHandler => {
       sendCommand: (...args: string[]) => redis.call(...args),
     }),
     windowMs,
-    max,
+    limit,
     standardHeaders: "draft-8",
     legacyHeaders: false,
     keyGenerator: (req: Request) => {

@@ -10,7 +10,7 @@ const router: Router = Router();
 router.post(
   "/",
   validate({ body: signUpSchema }),
-  limiter({ max: 100 }), // ← inline
+  limiter({ limit: 100 }), // ← inline
   asyncHandler(signUpController),
 );
 

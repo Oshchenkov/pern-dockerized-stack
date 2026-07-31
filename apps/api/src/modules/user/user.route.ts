@@ -10,7 +10,7 @@ const router: Router = Router();
 router.get(
   "/users",
   validate({ body: createUserBody }),
-  limiter({ max: 100 }), // ← inline
+  limiter({ limit: 100 }), // ← inline
   asyncHandler(async (req, res) => {
     // const users = await User.find();
     res.sendResponse(200, [{ user: "user data" }], "Users retrieved");
@@ -21,7 +21,7 @@ router.post(
   "/users",
   limiter({
     windowMs: 1 * 60 * 1000,
-    max: 20,
+    limit: 20,
     message: "Stop creating users!",
   }),
   asyncHandler(async (req, res) => {
