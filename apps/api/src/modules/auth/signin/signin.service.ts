@@ -7,7 +7,7 @@ import {
   ForbiddenError,
   UnauthorizedError,
 } from "#src/middleware/error.middleware";
-import { SignInInput } from "./signin.validation";
+import { SignInInput } from "./signIn.validation";
 
 export async function signInService(
   input: SignInInput,

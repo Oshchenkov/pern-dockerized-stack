@@ -2,8 +2,8 @@ import { Router } from "express";
 import { limiter } from "#src/middleware/rateLimiter.middleware";
 import { asyncHandler } from "#src/utils/asyncHandler";
 import { validate } from "#src/middleware/validate.middleware";
-import { signUpSchema } from "./signup.validation";
-import { signUpController } from "./signup.controller";
+import { signUpSchema } from "./signUp.validation";
+import { signUpController } from "./signUp.controller";
 
 const router: Router = Router();
 

@@ -2,8 +2,8 @@
 // src/modules/auth/auth.controller.ts
 import type { Request, Response, NextFunction } from "express";
 import { COOKIE_NAMES } from "#src/utils/constants";
-import type { SignUpInput } from "./signup.validation";
-import { signUpService } from "./signup.service";
+import type { SignUpInput } from "./signUp.validation";
+import { signUpService } from "./signUp.service";
 import { logger } from "#src/config/logger";
 import { setCookie } from "#src/utils/cookieHandler";
 

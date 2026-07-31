@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { SignInInput } from "./signin.validation";
-import { signInService } from "./signin.service";
+import { SignInInput } from "./signIn.validation";
+import { signInService } from "./signIn.service";
 import { setCookie } from "#src/utils/cookieHandler";
 import { COOKIE_NAMES } from "#src/utils/constants";
 

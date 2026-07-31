@@ -1,10 +1,10 @@
 // Business logic
 import { logger } from "#src/config/logger";
 import { prisma } from "#src/config/prisma";
-import { SignUpInput } from "./signup.validation";
 import { hashPassword } from "#src/utils/crypto";
 import { issueTokens } from "#src/services/session.service";
 import { UserStatus } from "#root/prisma/generated/prisma/enums";
+import { SignUpInput } from "./signUp.validation";
 
 export async function signUpService(
   input: SignUpInput,

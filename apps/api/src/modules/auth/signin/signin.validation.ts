@@ -1,5 +1,5 @@
 import z from "zod";
-import { signUpSchema } from "../signup/signup.validation";
+import { signUpSchema } from "../signUp/signUp.validation";
 
 export const signInSchema = signUpSchema;
 
