@@ -56,6 +56,7 @@ trust-linux:
 	sudo update-ca-certificates
 	@echo "Done. Restart your browser."
 
+# run outside of devcontainer to generate certs
 certs-linux:
 	curl -sSL -o /tmp/mkcert "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
 	chmod +x /tmp/mkcert

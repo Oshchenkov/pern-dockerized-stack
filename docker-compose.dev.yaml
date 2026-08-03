@@ -16,17 +16,17 @@ services:
   # ---------------------------------------------------------------------------
   # pgAdmin — optional browser-based DB GUI
   # ---------------------------------------------------------------------------
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pern-pgadmin4-dev
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "${PGADMIN_PORT:-5050}:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: pern-pgadmin4-dev
+  #   restart: unless-stopped
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   ports:
+  #     - "${PGADMIN_PORT:-5050}:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
 
   # ---------------------------------------------------------------------------
   # API — development target with nodemon hot-reload & Node debug port
@@ -107,5 +107,5 @@ services:
 
     command: ["pnpm", "dev"]
 
-volumes:
-  pgadmin_data:
+# volumes:
+#   pgadmin_data:
