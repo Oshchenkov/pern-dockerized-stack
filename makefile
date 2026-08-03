@@ -9,7 +9,7 @@ PROD_COMPOSE_FILE=docker-compose.prod.yaml
 #  DEV TARGETS
 # ---------------------------------------------------------------------------
 
-.PHONY:  build build.clean up stop down clean watch certs extract-ca trust trust-mac trust-linux setup
+.PHONY:  build build.clean up stop down clean watch certs trust extract-ca trust-mac trust-linux certs-linux
 
 build:
 	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} build 
@@ -32,17 +32,16 @@ down:
 clean:
 	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} down --volumes --remove-orphans
 
-certs:
-	$(COMPOSE) up --build certs
+
+
+trust: extract-ca
+	@uname -s | grep -q Darwin && $(MAKE) trust-mac || $(MAKE) trust-linux
 
 extract-ca:
 	@mkdir -p ./cert/certs/ca
 	$(COMPOSE) run --rm --entrypoint "" certs cat /certs/ca/ca.crt > ./cert/certs/ca/ca.crt
 	$(COMPOSE) run --rm --entrypoint "" certs cat /certs/ca/ca.key > ./cert/certs/ca/ca.key
 	@echo "CA extracted to ./cert/certs/ca/"
-
-trust: extract-ca
-	@uname -s | grep -q Darwin && $(MAKE) trust-mac || $(MAKE) trust-linux
 
 trust-mac:
 	@echo "Installing local CA into macOS trust store..."
@@ -57,8 +56,15 @@ trust-linux:
 	sudo update-ca-certificates
 	@echo "Done. Restart your browser."
 
-setup: certs trust
-	@echo "Setup complete. Run 'make up' to start."
+certs-linux:
+	curl -sSL -o /tmp/mkcert "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+	chmod +x /tmp/mkcert
+	sudo mv /tmp/mkcert /usr/local/bin/mkcert
+	mkdir -p cert/tls
+	mkcert -cert-file cert/tls/tls.crt -key-file cert/tls/tls.key localhost 127.0.0.1
+
+
+	
 
 # ---------------------------------------------------------------------------
 #  PROD TARGETS
