@@ -33,7 +33,7 @@ clean:
 	docker compose -f ${BASE_COMPOSE_FILE} -f ${DEVELOPMENT_COMPOSE_FILE} down --volumes --remove-orphans
 
 
-
+# Generate on local machine and copy to devcontainer openssl cert
 trust: extract-ca
 	@uname -s | grep -q Darwin && $(MAKE) trust-mac || $(MAKE) trust-linux
 
