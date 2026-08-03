@@ -13,7 +13,6 @@ const cookieOptions = {
   secure: env.COOKIE_SECURE,
   sameSite: "strict" as const,
   path: "/",
-  domain: env.COOKIE_DOMAIN,
 };
 
 export const authController = {

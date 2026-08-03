@@ -8,6 +8,14 @@ enum SessionStatus {
     REVOKED
 }
 
+enum RevokedReason {
+    ROTATED
+    REPLAY_ATTACK
+    LOGOUT
+    ADMIN
+    EXPIRED
+}
+
 model User {
     id                   String     @id @default(cuid())
     status               UserStatus @default(ACTIVE)
@@ -63,20 +71,21 @@ model OAuthAccount {
 }
 
 model UserSession {
-    id               String        @id @default(cuid())
-    familyId         String        @map("family_id") // for multi-device session revocation
-    userId           String        @map("user_id")
-    refreshTokenHash String        @unique @map("refresh_token_hash")
-    status           SessionStatus @default(ACTIVE) @map("status")
-    ipAddress        String?       @map("ip_address") @db.Inet
-    userAgent        String?       @map("user_agent") // Raw browser string
-    country          String?       @map("country") // Derived from IP via GeoIP
-    expiresAt        DateTime      @map("expires_at")
-    lastActiveAt     DateTime      @default(now()) @map("last_active_at")
-    revokedAt        DateTime?     @map("revoked_at")
-    replacedBy       String?       @map("replaced_by") // session.id of the new session that replaced this one
-    createdAt        DateTime      @default(now()) @map("created_at")
-    updatedAt        DateTime      @updatedAt @map("updated_at")
+    id               String         @id @default(cuid())
+    familyId         String         @map("family_id") // for multi-device session revocation
+    userId           String         @map("user_id")
+    refreshTokenHash String         @unique @map("refresh_token_hash")
+    status           SessionStatus  @default(ACTIVE) @map("status")
+    ipAddress        String?        @map("ip_address") @db.Inet
+    userAgent        String?        @map("user_agent") // Raw browser string
+    country          String?        @map("country") // Derived from IP via GeoIP
+    expiresAt        DateTime       @map("expires_at")
+    lastActiveAt     DateTime       @default(now()) @map("last_active_at")
+    revokedAt        DateTime?      @map("revoked_at")
+    replacedBy       String?        @map("replaced_by") // session.id of the new session that replaced this one
+    revokedReason    RevokedReason? @map("revoked_reason")
+    createdAt        DateTime       @default(now()) @map("created_at")
+    updatedAt        DateTime       @updatedAt @map("updated_at")
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

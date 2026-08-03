@@ -54,6 +54,43 @@ export class BadRequestError extends AppError {
   }
 }
 
+// ── Session & Token Errors ──────────────────────────────────────────
+
+export class SessionNotFoundError extends AppError {
+  constructor(message = "Session not found", details?: unknown) {
+    super(401, `SESSION_NOT_FOUND: ${message}`, details);
+    this.name = "SessionNotFoundError";
+  }
+}
+
+export class TokenReuseDetectedError extends AppError {
+  constructor(
+    public readonly familyId: string,
+    public readonly userId: string,
+    message = "Token reuse detected",
+  ) {
+    // Pass family and user IDs into the details object
+    super(401, `TOKEN_REUSE_DETECTED: ${message}`, { familyId, userId });
+    this.name = "TokenReuseDetectedError";
+  }
+}
+
+export class SessionInactiveError extends AppError {
+  // Note: You could also use 403 (Forbidden) here if "inactive" means suspended by an admin,
+  // but 401 (Unauthorized) is standard if it simply prevents authentication.
+  constructor(message = "Session is inactive", details?: unknown) {
+    super(401, `SESSION_INACTIVE: ${message}`, details);
+    this.name = "SessionInactiveError";
+  }
+}
+
+export class SessionExpiredError extends AppError {
+  constructor(message = "Session has expired", details?: unknown) {
+    super(401, `SESSION_EXPIRED: ${message}`, details);
+    this.name = "SessionExpiredError";
+  }
+}
+
 // ── Global Error Handler ─────────────────────────────────────────────
 export const errorHandler = (
   err: Error,

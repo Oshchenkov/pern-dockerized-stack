@@ -1,217 +1,408 @@
-// src/services/session.service.ts
+import { randomUUID } from "node:crypto";
 import { prisma } from "#src/config/prisma";
-import { env } from "#src/config/env";
 import { logger } from "#src/config/logger";
-
-import {
-  hashToken,
-  hashPassword,
-  verifyPassword,
-  generateOpaqueToken,
-} from "#src/utils/crypto";
+import { hashToken } from "#src/utils/crypto";
 import {
   signAccessToken,
   signRefreshToken,
-  verifyRefreshToken,
   ACCESS_TOKEN_TTL,
   REFRESH_TOKEN_TTL,
 } from "#src/services/token.service";
+import {
+  RevokedReason,
+  UserStatus,
+  SessionStatus,
+} from "#root/prisma/generated/prisma/enums";
+import {
+  SessionNotFoundError,
+  SessionInactiveError,
+  SessionExpiredError,
+  TokenReuseDetectedError,
+} from "#src/middleware/error.middleware";
+
+// ─── Configuration ────────────────────────────────────────────────────────
+
+/**
+ * Grace window for legitimate network retries (mobile, flaky connections).
+ * If a revoked token is replayed WITHIN this window and has a `replacedBy`
+ * pointer, we treat it as a retry — NOT an attack.
+ */
+const REUSE_LEEWAY_MS = 10_000; // 10 seconds
+
+// ─── Return type ──────────────────────────────────────────────────────────
+
+export interface RotateResult {
+  newSessionId: string;
+  familyId: string;
+  userId: string;
+  /** true when the request was a legitimate network retry (leeway window) */
+  wasRetry: boolean;
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────
 
 export const sessionService = {
-  /**
-   * Create a new session (sign-in / sign-up).
-   * Returns the session record. The caller stores the hashed refresh token.
-   */
+  // ──────────────────────────────────────────────────────────────────────
+  // CREATE  (sign-up / sign-in)
+  // ──────────────────────────────────────────────────────────────────────
   async create(params: {
+    sessionId: string;
+    familyId: string;
     userId: string;
-    refreshToken: string; // raw opaque or JWT — we hash before storing
+    refreshTokenHash: string;
     ipAddress?: string;
     userAgent?: string;
     country?: string;
   }) {
-    const familyId = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
-
     return prisma.userSession.create({
       data: {
-        familyId,
+        id: params.sessionId,
+        familyId: params.familyId,
         userId: params.userId,
-        refreshTokenHash: hashToken(params.refreshToken),
+        refreshTokenHash: params.refreshTokenHash,
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent ?? null,
         country: params.country ?? null,
-        expiresAt,
-        status: "ACTIVE",
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
+        status: UserStatus.ACTIVE,
       },
     });
   },
 
-  /**
-   * OWASP Refresh Token Rotation with Reuse Detection.
-   *
-   * 1. Validate the incoming refresh token hash exists & is ACTIVE.
-   * 2. If the token was already used (REVOKED + replacedBy set) →
-   *    REUSE DETECTED → revoke entire family.
-   * 3. Otherwise, revoke old session, create new session in same family.
-   */
+  // ──────────────────────────────────────────────────────────────────────
+  // PRE-VALIDATE  (lightweight read BEFORE any crypto)
+  //
+  // Called by refresh.service BEFORE signing new tokens.
+  // Fails fast on: missing session, expired, banned, obvious replay.
+  // Returns the old session so the caller can extract familyId etc.
+  // ──────────────────────────────────────────────────────────────────────
+  async preValidate(oldRefreshTokenHash: string) {
+    const session = await prisma.userSession.findUnique({
+      where: { refreshTokenHash: oldRefreshTokenHash },
+    });
+
+    if (!session) {
+      throw new SessionNotFoundError();
+    }
+
+    // Hard replay: revoked OUTSIDE the leeway window → attack
+    if (session.status === SessionStatus.REVOKED) {
+      const revokedAt = session.revokedAt?.getTime() ?? 0;
+      const elapsed = Date.now() - revokedAt;
+
+      const withinLeeway =
+        elapsed <= REUSE_LEEWAY_MS && session.replacedBy !== null;
+
+      if (!withinLeeway) {
+        // ── BLAST RADIUS: revoke the entire family ──
+        logger.warn(
+          {
+            sessionId: session.id,
+            familyId: session.familyId,
+            userId: session.userId,
+            elapsedMs: elapsed,
+          },
+          "Refresh token REPLAY detected — revoking entire family",
+        );
+
+        await this.revokeFamily(session.familyId, RevokedReason.REPLAY_ATTACK);
+        throw new TokenReuseDetectedError(session.familyId, session.userId);
+      }
+
+      // Within leeway → signal retry to caller (handled in rotate)
+    }
+
+    if (
+      session.status !== "ACTIVE" &&
+      session.status !== SessionStatus.REVOKED
+    ) {
+      throw new SessionInactiveError();
+    }
+
+    if (session.expiresAt < new Date()) {
+      await prisma.userSession.updateMany({
+        where: { id: session.id, status: "ACTIVE" },
+        data: {
+          status: SessionStatus.REVOKED,
+          revokedAt: new Date(),
+          revokedReason: RevokedReason.EXPIRED,
+        },
+      });
+      throw new SessionExpiredError();
+    }
+
+    return session;
+  },
+
+  // ──────────────────────────────────────────────────────────────────────
+  // ROTATE  (atomic transaction with row-level lock)
+  //
+  // Called AFTER the caller has signed new tokens.
+  // Handles both the normal path and the leeway-retry path.
+  // ──────────────────────────────────────────────────────────────────────
   async rotate(params: {
-    oldRefreshToken: string;
-    newRefreshToken: string;
+    oldRefreshTokenHash: string;
+    newRefreshTokenHash: string;
+    newSessionId: string;
     ipAddress?: string;
     userAgent?: string;
-  }) {
-    const oldHash = hashToken(params.oldRefreshToken);
+  }): Promise<RotateResult> {
+    return prisma.$transaction(
+      async (tx) => {
+        // ── 1. Lock the old session row (SELECT … FOR UPDATE) ──
+        //    Prevents two concurrent requests from both passing validation.
+        const locked: Array<{
+          id: string;
+          family_id: string;
+          user_id: string;
+          status: string;
+          revoked_at: Date | null;
+          replaced_by: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          country: string | null;
+        }> = await tx.$queryRaw`
+          SELECT id, family_id, user_id, status,
+                 revoked_at, replaced_by,
+                 ip_address, user_agent, country
+          FROM user_sessions
+          WHERE refresh_token_hash = ${params.oldRefreshTokenHash}
+          FOR UPDATE
+        `;
 
-    const oldSession = await prisma.userSession.findUnique({
-      where: { refreshTokenHash: oldHash },
-    });
+        const old = locked[0];
+        if (!old) throw new SessionNotFoundError();
 
-    if (!oldSession) {
-      throw new Error("SESSION_NOT_FOUND");
-    }
+        // ── 2. Replay / leeway handling ──
+        if (old.status === SessionStatus.REVOKED) {
+          const elapsed = Date.now() - (old.revoked_at?.getTime() ?? 0);
+          const withinLeeway =
+            elapsed <= REUSE_LEEWAY_MS && old.replaced_by !== null;
 
-    // --- REUSE DETECTION ---
-    if (oldSession.status === "REVOKED") {
-      // Someone replayed an old token → compromise detected.
-      logger.warn(
-        {
-          sessionId: oldSession.id,
-          familyId: oldSession.familyId,
-          userId: oldSession.userId,
-        },
-        "Refresh token reuse detected — revoking entire family",
-      );
-      await this.revokeFamily(oldSession.familyId);
-      throw new Error("TOKEN_REUSE_DETECTED");
-    }
+          if (!withinLeeway) {
+            // ATTACK — revoke entire family inside the same tx
+            await tx.userSession.updateMany({
+              where: { familyId: old.family_id },
+              data: {
+                status: SessionStatus.REVOKED,
+                revokedAt: new Date(),
+                revokedReason: RevokedReason.REPLAY_ATTACK,
+              },
+            });
+            throw new TokenReuseDetectedError(old.family_id, old.user_id);
+          }
 
-    if (oldSession.status !== "ACTIVE") {
-      throw new Error("SESSION_INACTIVE");
-    }
+          // ── LEEWAY RETRY ──
+          // The previous rotation succeeded but the client lost the response.
+          // Rotate forward from the REPLACEMENT session, not the dead one.
+          const replacement = await tx.userSession.findUnique({
+            where: { id: old.replaced_by! },
+          });
 
-    // Check expiry
-    if (oldSession.expiresAt < new Date()) {
-      await prisma.userSession.update({
-        where: { id: oldSession.id },
-        data: { status: "REVOKED", revokedAt: new Date() },
-      });
-      throw new Error("SESSION_EXPIRED");
-    }
+          if (!replacement || replacement.status !== "ACTIVE") {
+            // Replacement already gone → treat as attack
+            await tx.userSession.updateMany({
+              where: { familyId: old.family_id },
+              data: {
+                status: SessionStatus.REVOKED,
+                revokedAt: new Date(),
+                revokedReason: RevokedReason.REPLAY_ATTACK,
+              },
+            });
+            throw new TokenReuseDetectedError(old.family_id, old.user_id);
+          }
 
-    // --- ROTATE ---
-    const newExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
+          // Revoke the replacement, create a fresh session
+          await tx.userSession.update({
+            where: { id: replacement.id },
+            data: {
+              status: SessionStatus.REVOKED,
+              revokedAt: new Date(),
+              revokedReason: RevokedReason.ROTATED,
+              replacedBy: params.newSessionId,
+            },
+          });
 
-    const [newSession] = await prisma.$transaction([
-      // Revoke old
-      prisma.userSession.update({
-        where: { id: oldSession.id },
-        data: {
-          status: "REVOKED",
-          revokedAt: new Date(),
-          replacedBy: "", // will be set after create
-        },
-      }),
-      // Create new in same family
-      prisma.userSession.create({
-        data: {
-          familyId: oldSession.familyId,
-          userId: oldSession.userId,
-          refreshTokenHash: hashToken(params.newRefreshToken),
-          ipAddress: params.ipAddress ?? oldSession.ipAddress,
-          userAgent: params.userAgent ?? oldSession.userAgent,
-          country: oldSession.country,
-          expiresAt: newExpiresAt,
-          status: "ACTIVE",
-        },
-      }),
-    ]);
+          const newSession = await tx.userSession.create({
+            data: {
+              id: params.newSessionId,
+              familyId: old.family_id,
+              userId: old.user_id,
+              refreshTokenHash: params.newRefreshTokenHash,
+              ipAddress: params.ipAddress ?? replacement.ipAddress,
+              userAgent: params.userAgent ?? replacement.userAgent,
+              country: replacement.country,
+              expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
+              status: SessionStatus.ACTIVE,
+            },
+          });
 
-    // Link old → new
-    await prisma.userSession.update({
-      where: { id: oldSession.id },
-      data: { replacedBy: newSession.id },
-    });
+          logger.info(
+            {
+              sessionId: old.id,
+              replacedBy: replacement.id,
+              userId: old.user_id,
+            },
+            "Leeway retry — rotated from replacement session",
+          );
 
-    return { newSession, userId: oldSession.userId };
+          return {
+            newSessionId: newSession.id,
+            familyId: old.family_id,
+            userId: old.user_id,
+            wasRetry: true,
+          };
+        }
+
+        // ── 3. Guard: must be ACTIVE ──
+        if (old.status !== SessionStatus.ACTIVE) {
+          throw new SessionInactiveError();
+        }
+
+        // ── 4. Normal rotation ──
+        await tx.userSession.update({
+          where: { id: old.id },
+          data: {
+            status: SessionStatus.REVOKED,
+            revokedAt: new Date(),
+            revokedReason: RevokedReason.ROTATED,
+            replacedBy: params.newSessionId,
+          },
+        });
+
+        const newSession = await tx.userSession.create({
+          data: {
+            id: params.newSessionId,
+            familyId: old.family_id,
+            userId: old.user_id,
+            refreshTokenHash: params.newRefreshTokenHash,
+            ipAddress: params.ipAddress ?? old.ip_address,
+            userAgent: params.userAgent ?? old.user_agent,
+            country: old.country,
+            expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
+            status: SessionStatus.ACTIVE,
+          },
+        });
+
+        return {
+          newSessionId: newSession.id,
+          familyId: old.family_id,
+          userId: old.user_id,
+          wasRetry: false,
+        };
+      },
+      {
+        // Serializable isolation prevents phantom reads during rotation
+        isolationLevel: "Serializable",
+        timeout: 5_000,
+      },
+    );
   },
 
-  /** Revoke all sessions in a family (reuse detection / logout-all on device). */
-  async revokeFamily(familyId: string): Promise<void> {
+  // ──────────────────────────────────────────────────────────────────────
+  // REVOKE helpers
+  // ──────────────────────────────────────────────────────────────────────
+
+  /** Revoke every session in a family (replay attack / device logout). */
+  async revokeFamily(
+    familyId: string,
+    reason: RevokedReason = RevokedReason.EXPIRED,
+  ): Promise<number> {
+    const { count } = await prisma.userSession.updateMany({
+      where: { familyId, status: SessionStatus.ACTIVE },
+      data: {
+        status: SessionStatus.REVOKED,
+        revokedAt: new Date(),
+        revokedReason: reason,
+      },
+    });
+    return count;
+  },
+
+  /** Revoke a single session (normal logout). */
+  async revoke(
+    sessionId: string,
+    reason: RevokedReason = RevokedReason.LOGOUT,
+  ): Promise<void> {
     await prisma.userSession.updateMany({
-      where: { familyId, status: "ACTIVE" },
-      data: { status: "REVOKED", revokedAt: new Date() },
+      where: { id: sessionId, status: SessionStatus.ACTIVE },
+      data: {
+        status: SessionStatus.REVOKED,
+        revokedAt: new Date(),
+        revokedReason: reason,
+      },
     });
   },
 
-  /** Revoke a single session (logout). */
-  async revoke(sessionId: string): Promise<void> {
-    await prisma.userSession.update({
-      where: { id: sessionId },
-      data: { status: "REVOKED", revokedAt: new Date() },
+  /** Revoke ALL sessions for a user (password change, admin ban). */
+  async revokeAllForUser(
+    userId: string,
+    reason: RevokedReason = RevokedReason.ADMIN,
+  ): Promise<number> {
+    const { count } = await prisma.userSession.updateMany({
+      where: { userId, status: SessionStatus.ACTIVE },
+      data: {
+        status: SessionStatus.REVOKED,
+        revokedAt: new Date(),
+        revokedReason: reason,
+      },
     });
+    return count;
   },
 
-  /** Revoke ALL sessions for a user (password change, admin ban, etc.). */
-  async revokeAllForUser(userId: string): Promise<void> {
-    await prisma.userSession.updateMany({
-      where: { userId, status: "ACTIVE" },
-      data: { status: "REVOKED", revokedAt: new Date() },
-    });
-  },
-
-  /** Validate session is still active (used during access-token verification). */
+  /** Liveness check for the authenticate middleware. */
   async isActive(sessionId: string): Promise<boolean> {
     const session = await prisma.userSession.findUnique({
       where: { id: sessionId },
       select: { status: true, expiresAt: true },
     });
     if (!session) return false;
-    return session.status === "ACTIVE" && session.expiresAt > new Date();
+    return (
+      session.status === SessionStatus.ACTIVE && session.expiresAt > new Date()
+    );
   },
 
-  /** Purge expired sessions (cron). */
+  /** Cron: purge expired rows. */
   async purgeExpired(): Promise<number> {
     const { count } = await prisma.userSession.deleteMany({
       where: { expiresAt: { lt: new Date() } },
     });
+    if (count > 0) logger.info({ count }, "Purged expired sessions");
     return count;
   },
 };
 
-// ─── INTERNAL: Issue token pair + create session ────────────────────────
+// ─── Token issuance (sign-up / sign-in) ───────────────────────────────────
+
 export async function issueTokens(
   userId: string,
   tokenVersion: number,
-  meta: { ip?: string; ua?: string },
+  meta: { ip?: string; ua?: string; country?: string },
 ) {
-  const refreshRaw = generateOpaqueToken();
+  const sessionId = randomUUID();
+  const familyId = randomUUID();
 
-  // Create session first to get sessionId
-  const session = await sessionService.create({
+  const refreshToken = await signRefreshToken({
     userId,
-    refreshToken: refreshRaw, // hashed inside
-    ipAddress: meta.ip,
-    userAgent: meta.ua,
+    sessionId,
+    familyId,
+    tokenVersion,
   });
 
   const accessToken = await signAccessToken({
     userId,
-    sessionId: session.id,
+    sessionId,
     tokenVersion,
   });
 
-  const refreshToken = await signRefreshToken({
+  await sessionService.create({
+    sessionId,
+    familyId,
     userId,
-    sessionId: session.id,
-    familyId: session.familyId,
-    tokenVersion,
-  });
-
-  // Update session hash to the JWT refresh token (so rotate() can find it)
-  const { hashToken } = await import("#src/utils/crypto");
-  await prisma.userSession.update({
-    where: { id: session.id },
-    data: { refreshTokenHash: hashToken(refreshToken) },
+    refreshTokenHash: hashToken(refreshToken),
+    ipAddress: meta.ip,
+    userAgent: meta.ua,
+    country: meta.country,
   });
 
   return {
@@ -221,3 +412,128 @@ export async function issueTokens(
     refreshExpiresIn: REFRESH_TOKEN_TTL,
   };
 }
+
+/*
+
+Execution order
+────────────────
+  PHASE 1 — fail fast, no heavy crypto
+  ┌─────────────────────────────────────────────────┐
+  │ verifyRefreshToken()        ← HMAC verify, fast │
+  │ denylist.isDenied()         ← Redis GET         │
+  │ hashToken(old)              ← SHA-256, ~0.01 ms │
+  │ sessionService.preValidate()← DB read           │
+  │  └ REVOKED + outside leeway → revokeFamily → 401│
+  │  └ REVOKED + within leeway  → flag as retry     │
+  │  └ NOT FOUND / EXPIRED      → 401               │
+  │ prisma.user.findUnique()    ← tokenVersion check│
+  └─────────────────────────────────────────────────┘
+  ↓ (only if everything passed)
+
+  PHASE 2 — heavy crypto
+  ┌─────────────────────────────────────────────────┐
+  │ signRefreshToken()          ← HS256 sign        │
+  │ signAccessToken()           ← HS256 sign        │
+  └─────────────────────────────────────────────────┘
+  ↓
+
+  PHASE 3 — atomic DB write
+  ┌─────────────────────────────────────────────────┐
+  │ $transaction(Serializable)                      │
+  │   SELECT … FOR UPDATE   ← row lock             │
+  │   if REVOKED again → leeway or blast radius     │
+  │   UPDATE old → REVOKED, replacedBy              │
+  │   INSERT new session                            │
+  └─────────────────────────────────────────────────┘
+  ↓
+
+  PHASE 4 — cleanup
+  ┌─────────────────────────────────────────────────┐
+  │ denylist.add(old jti)                           │
+  │ return { accessToken, refreshToken }            │
+  └─────────────────────────────────────────────────┘
+
+  ---------------------------------------------------
+
+LEGITIMATE NETWORK RETRY (within 10 s)
+═══════════════════════════════════════
+
+Client                    Server                     DB
+  │                         │                         │
+  │── POST /auth/refresh ──►│                         │
+  │   (oldRefreshJwt)       │── preValidate(hash) ──► │
+  │                         │◄── session ACTIVE ───── │
+  │                         │── sign new tokens       │
+  │                         │── rotate() ───────────► │
+  │                         │   UPDATE old→REVOKED    │
+  │                         │   INSERT new (id=X)     │
+  │                         │◄─────────────────────── │
+  │   ✗ network drop ✗      │                         │
+  │   (never receives X)    │                         │
+  │                         │                         │
+  │── POST /auth/refresh ──►│  (retry, same old JWT)  │
+  │   (oldRefreshJwt)       │── preValidate(hash) ──► │
+  │                         │◄── REVOKED, 3 s ago ──  │
+  │                         │   replacedBy = X        │
+  │                         │   3 s < 10 s → RETRY    │
+  │                         │── sign new tokens       │
+  │                         │── rotate() ───────────► │
+  │                         │   FOR UPDATE old row    │
+  │                         │   leeway → find X       │
+  │                         │   UPDATE X → REVOKED    │
+  │                         │   INSERT Y              │
+  │                         │◄─────────────────────── │
+  │◄── 200 { new tokens } ──│                         │
+  │   (session Y)           │                         │
+
+
+ATTACK (outside 10 s)
+═════════════════════
+
+Attacker                  Server                     DB
+  │                         │                         │
+  │── POST /auth/refresh ──►│                         │
+  │   (stolen old JWT)      │── preValidate(hash) ──► │
+  │                         │◄── REVOKED, 47 s ago ─  │
+  │                         │   47 s > 10 s → ATTACK  │
+  │                         │── revokeFamily() ─────► │
+  │                         │   UPDATE ALL family     │
+  │                         │   → REVOKED             │
+  │                         │◄─────────────────────── │
+  │◄── 401 compromised ──── │                         │
+  │                         │                         │
+  │   (legitimate user's    │                         │
+  │    sessions also dead — │                         │
+  │    they re-authenticate)│                         │
+
+
+
+  ======================================================
+
+  Request A ──┐
+             ├──► both pass preValidate (session is ACTIVE)
+Request B ──┘
+             │
+             ▼
+      $transaction(Serializable)
+      ┌──────────────────────────────────────────┐
+      │  SELECT … FOR UPDATE                     │
+      │                                          │
+      │  Request A acquires row lock first       │
+      │    → UPDATE old → REVOKED                │
+      │    → INSERT new                          │
+      │    → COMMIT                              │
+      │                                          │
+      │  Request B waits for lock…               │
+      │    → reads old row → now REVOKED         │
+      │    → outside leeway (revokedAt = now)    │
+      │    → BUT elapsed ≈ 0 ms < 10 s           │
+      │    → replacedBy is set                   │
+      │    → treated as leeway retry             │
+      │    → rotates from replacement            │
+      │    → COMMIT                              │
+      └──────────────────────────────────────────┘
+
+Both requests succeed. No false-positive attack.
+No double-spend of the same refresh token.
+*/

@@ -1,7 +1,7 @@
 import { UnauthorizedError } from "#src/middleware/error.middleware";
 import { COOKIE_NAMES } from "#src/utils/constants";
 import { NextFunction, Request, Response } from "express";
-import { refreshService } from "./refresh.service";
+import { refreshService } from "#src/services/refresh.service";
 import {
   clearAccessTokenCookie,
   clearRefreshTokenCookie,
