@@ -35,7 +35,7 @@ export async function verifyPassword(
   }
 }
 
-/** Generate a cryptographically secure random token (opaque refresh token). */
+/** CSRF | Email verification | Password reset | OAuth state parameter = token */
 export function generateOpaqueToken(bytes = 64): string {
   return randomBytes(bytes).toString("base64url");
 }

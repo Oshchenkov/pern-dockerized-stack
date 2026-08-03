@@ -7,6 +7,14 @@ import { prisma } from "#src/config/prisma";
 import { redis } from "#src/config/redis";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
+import {
+  initMaintenanceQueue,
+  closeMaintenanceQueue,
+} from "#src/jobs/maintenance.queue";
+import {
+  startMaintenanceWorker,
+  stopMaintenanceWorker,
+} from "#src/jobs/maintenance.worker";
 
 const PORT = process.env.PORT;
 const TLS_CERT = "/certs/tls/tls.crt";
@@ -20,66 +28,80 @@ if (!PORT) {
 // CONNECTION TEST FUNCTIONS
 // ==========================================
 const testPrismaConnection = async () => {
-  // Forces a live round-trip network query to verify PostgreSQL availability and credentials
   await prisma.$queryRaw`SELECT 1`;
-  console.log("✅ Prisma (Database) connected successfully.");
+  logger.info("✅ Prisma (Database) connected successfully.");
 };
 
 const testRedisConnection = async () => {
-  // Sends a PING command to verify the server is actually responding
   const pong = await redis.ping();
   if (pong !== "PONG") {
     throw new Error("Redis PING test failed.");
   }
-  console.log("✅ Redis connected successfully.");
+  logger.info("✅ Redis connected successfully.");
 };
 
 // ==========================================
 // SERVER & SHUTDOWN LOGIC
 // ==========================================
 const startServer = async () => {
-  let server: any;
+  let server: http.Server | https.Server | undefined;
 
-  // The Graceful Shutdown function now accepts an exit code
   const gracefulShutdown = async (reason: string, exitCode: number = 0) => {
-    console.log(`\n⚠️ ${reason} received. Shutting down gracefully...`);
+    logger.warn(`${reason} received. Shutting down gracefully...`);
+
+    const forceKillTimer = setTimeout(() => {
+      logger.fatal("Forced exit — graceful shutdown timed out");
+      process.exit(1);
+    }, 15_000);
+    forceKillTimer.unref();
 
     try {
-      // 1. Stop accepting new requests
-      if (server) server.close();
-
-      // 2. Disconnect Prisma
-      await prisma.$disconnect();
-      console.log("🔌 Prisma disconnected.");
-
-      // ioredis statuses: 'wait', 'reconnecting', 'connecting', 'connect', 'ready', 'close', 'end'
-      if (redis.status !== "end" && redis.status !== "close") {
-        await redis.quit(); // .quit() gracefully closes the connection
-        console.log("🔌 ioredis disconnected.");
-      } else {
-        console.log("ℹ️ ioredis was already closed.");
+      // 1. Stop accepting new HTTP requests
+      if (server) {
+        server.close();
+        logger.info("🔌 HTTP server closed (no new connections).");
       }
+
+      // 2. Stop BullMQ worker (waits for in-flight job to finish)
+      await stopMaintenanceWorker();
+      logger.info("🔌 BullMQ worker stopped.");
+
+      // 3. Close BullMQ queue (releases its internal ioredis connections)
+      await closeMaintenanceQueue();
+      logger.info("🔌 BullMQ queue closed.");
+
+      // 4. Disconnect YOUR app-level ioredis client
+      if (redis.status !== "end" && redis.status !== "close") {
+        await redis.quit();
+        logger.info("🔌 Redis (app) disconnected.");
+      } else {
+        logger.info("ℹ️ Redis (app) was already closed.");
+      }
+
+      // 5. Disconnect Prisma
+      await prisma.$disconnect();
+      logger.info("🔌 Prisma disconnected.");
     } catch (err) {
-      console.error("❌ Error during cleanup:", err);
+      logger.error({ err }, "❌ Error during cleanup");
     } finally {
-      // 4. Exit the process
-      // exitCode 0 = Clean stop (e.g., Ctrl+C, SIGTERM)
-      // exitCode 1 = Fatal crash (e.g., uncaughtException)
+      clearTimeout(forceKillTimer);
       process.exit(exitCode);
     }
   };
 
   try {
-    console.log("\n");
-    // Run connection tests in parallel for faster startup
+    // ── 1. Verify infrastructure ──
     await Promise.all([testPrismaConnection(), testRedisConnection()]);
 
-    // Start Express App ONLY if connections are successful
-    // server = app.listen(PORT, () => {
-    //   console.log(`\n🚀 Server running at http://localhost:${PORT}`);
-    // });
+    // ── 2. Init BullMQ queue + register repeatable schedules ──
+    await initMaintenanceQueue();
+    logger.info("✅ BullMQ queue initialized.");
 
-    function createServer() {
+    // ── 3. Start BullMQ worker ──
+    startMaintenanceWorker();
+
+    // ── 4. Create HTTP/HTTPS server ──
+    function createServer(): http.Server | https.Server {
       if (env.isDevelopment && fs.existsSync(TLS_CERT)) {
         return https.createServer(
           {
@@ -89,7 +111,6 @@ const startServer = async () => {
           app,
         );
       }
-
       return http.createServer(app);
     }
 
@@ -97,36 +118,28 @@ const startServer = async () => {
 
     server.listen(env.PORT, () => {
       const proto = server instanceof https.Server ? "https" : "http";
-      logger.info(`API → ${proto}://localhost:${env.PORT}`);
+      logger.info(`🚀 API → ${proto}://localhost:${env.PORT}`);
     });
 
-    // ==========================================
-    // STANDARD TERMINAL SIGNALS (Clean Exits)
-    // ==========================================
+    // ── 5. Standard terminal signals (clean exits) ──
     process.on("SIGTERM", () =>
       gracefulShutdown("SIGTERM (Process Manager requested stop)", 0),
     );
     process.on("SIGINT", () => gracefulShutdown("SIGINT (Ctrl+C)", 0));
 
-    // ==========================================
-    // FATAL CRASH HANDLERS (Dirty Exits)
-    // ==========================================
+    // ── 6. Fatal crash handlers (dirty exits) ──
     process.on("uncaughtException", (err: Error) => {
-      console.error("💥 UNCAUGHT EXCEPTION! Server is in an unknown state.");
-      console.error(err.stack || err);
-      // Exit with code 1 so PM2/Docker knows it crashed and restarts it
+      logger.fatal({ err }, "💥 UNCAUGHT EXCEPTION");
       gracefulShutdown("uncaughtException", 1);
     });
 
-    process.on("unhandledRejection", (reason: any, promise: Promise<any>) => {
-      console.error("💥 UNHANDLED PROMISE REJECTION!");
-      console.error("Reason:", reason);
-      // Exit with code 1
+    process.on("unhandledRejection", (reason: unknown) => {
+      logger.fatal({ reason }, "💥 UNHANDLED PROMISE REJECTION");
       gracefulShutdown("unhandledRejection", 1);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    gracefulShutdown("Startup Failure", 1);
+    logger.fatal({ error }, "❌ Failed to start server");
+    await gracefulShutdown("Startup Failure", 1);
   }
 };
 

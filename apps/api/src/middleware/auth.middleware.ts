@@ -9,6 +9,7 @@ import {
   ForbiddenError,
 } from "#src/middleware/error.middleware";
 import { COOKIE_NAMES } from "#src/utils/constants";
+import { UserStatus } from "#root/prisma/generated/prisma/enums";
 
 /**
  * OWASP: Validate access token on every protected request.
@@ -43,7 +44,8 @@ export async function authenticate(
     });
 
     if (!user) throw new UnauthorizedError("User not found");
-    if (user.status === "BANNED") throw new ForbiddenError("Account suspended");
+    if (user.status === UserStatus.BANNED)
+      throw new ForbiddenError("Account suspended");
     if (payload.tv !== user.tokenVersion) {
       throw new UnauthorizedError("Token invalidated — please sign in again");
     }
