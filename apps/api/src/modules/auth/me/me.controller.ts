@@ -1,7 +1,11 @@
 import { UnauthorizedError } from "#src/middleware/error.middleware";
 import { NextFunction, Request, Response } from "express";
 
-export async function meController(req: Request, res: Response, next: NextFunction) {
+export async function meController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     // req.user is set by authenticate middleware
     const user = await (
@@ -20,7 +24,7 @@ export async function meController(req: Request, res: Response, next: NextFuncti
 
     if (!user) throw new UnauthorizedError("User not found");
 
-    res.sendResponse(200, { user });
+    res.sendResponse(200, { user }, "User profile retrieved successfully");
   } catch (err) {
     next(err);
   }

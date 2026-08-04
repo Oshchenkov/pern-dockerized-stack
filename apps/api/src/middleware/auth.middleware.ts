@@ -1,26 +1,23 @@
-// src/middleware/authenticate.ts
 import type { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "#src/services/token.service";
 import { denylistService } from "#src/services/denylist.service";
-import { sessionService } from "#src/services/session.service";
 import { prisma } from "#src/config/prisma";
 import {
   UnauthorizedError,
   ForbiddenError,
+  AppError,
 } from "#src/middleware/error.middleware";
 import { COOKIE_NAMES } from "#src/utils/constants";
-import { UserStatus } from "#root/prisma/generated/prisma/enums";
+import { UserStatus, SessionStatus } from "#root/prisma/generated/prisma/enums";
+import { logger } from "#src/config/logger";
 
-/**
- * OWASP: Validate access token on every protected request.
- * Checks: signature → expiry → denylist → tokenVersion → session active → user status.
- */
 export async function authenticate(
   req: Request,
   _res: Response,
   next: NextFunction,
 ) {
   try {
+    // ── 1. Extract token ──────────────────────────────────────────────
     const token =
       req.cookies?.[COOKIE_NAMES.ACCESS_TOKEN] ??
       req.headers.authorization?.replace("Bearer ", "");
@@ -29,39 +26,80 @@ export async function authenticate(
       throw new UnauthorizedError("Access token required");
     }
 
-    // 1. Verify signature + expiry (jose)
-    const payload = await verifyAccessToken(token);
+    // ── 2. Verify JWT signature + expiry ──────────────────────────────
+    let payload;
+    try {
+      payload = await verifyAccessToken(token);
+    } catch {
+      throw new UnauthorizedError("Invalid or expired token");
+    }
 
-    // 2. Check denylist (Redis fast path)
+    // Guard: sub must exist
+    if (!payload.sub) {
+      throw new UnauthorizedError("Malformed token");
+    }
+
+    // ── 3. Denylist check (Redis, sub-ms) ─────────────────────────────
     if (payload.jti && (await denylistService.isDenied(payload.jti))) {
       throw new UnauthorizedError("Token revoked");
     }
 
-    // 3. Verify tokenVersion (invalidated on password change / admin action)
+    // ── 4. User + session in ONE query ────────────────────────────────
     const user = await prisma.user.findUnique({
-      where: { id: payload.sub! },
-      select: { tokenVersion: true, status: true },
+      where: { id: payload.sub },
+      select: {
+        tokenVersion: true,
+        status: true,
+        // Pull session in the same round-trip
+        sessions: payload.sid
+          ? {
+              where: { id: payload.sid },
+              select: { status: true, expiresAt: true },
+              take: 1,
+            }
+          : false,
+      },
     });
 
-    if (!user) throw new UnauthorizedError("User not found");
-    if (user.status === UserStatus.BANNED)
+    if (!user) {
+      throw new UnauthorizedError("User not found");
+    }
+
+    if (user.status === UserStatus.BANNED) {
       throw new ForbiddenError("Account suspended");
+    }
+
     if (payload.tv !== user.tokenVersion) {
       throw new UnauthorizedError("Token invalidated — please sign in again");
     }
 
-    // 4. Verify session is still active
-    if (payload.sid && !(await sessionService.isActive(payload.sid))) {
-      throw new UnauthorizedError("Session expired or revoked");
+    // ── 5. Session liveness ───────────────────────────────────────────
+    if (payload.sid) {
+      const session = Array.isArray(user.sessions) ? user.sessions[0] : null;
+
+      if (!session) {
+        throw new UnauthorizedError("Session not found");
+      }
+
+      if (
+        session.status !== SessionStatus.ACTIVE ||
+        session.expiresAt < new Date()
+      ) {
+        throw new UnauthorizedError("Session expired or revoked");
+      }
     }
 
+    // ── 6. Attach to request ──────────────────────────────────────────
     req.user = payload;
     next();
   } catch (err) {
-    next(
-      err instanceof UnauthorizedError || err instanceof ForbiddenError
-        ? err
-        : new UnauthorizedError("Invalid token"),
-    );
+    // Pass through known auth errors as-is
+    if (err instanceof AppError) {
+      return next(err);
+    }
+
+    // Unexpected error (DB down, Redis crash, bug) — log and return 500
+    logger.error({ err }, "authenticate: unexpected error");
+    next(err);
   }
 }

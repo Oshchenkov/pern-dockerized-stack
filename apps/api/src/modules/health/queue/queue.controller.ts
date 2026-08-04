@@ -32,7 +32,7 @@ export async function queueHealthController(
           template: s.template, // { name, data, opts } — the job it spawns
         })),
       },
-      "bullMQ works",
+      "BullMQ is up and running fine",
     );
   } catch (err) {
     next(err);
