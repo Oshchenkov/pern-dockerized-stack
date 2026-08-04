@@ -21,7 +21,7 @@ Express API
         |-- password login
         |-- social login
         |-- refresh rotation
-        |-- logout
+        |-- signout
         |-- ban/revoke
 
 */

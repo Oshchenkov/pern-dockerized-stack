@@ -290,7 +290,7 @@ export const sessionService = {
   // REVOKE helpers
   // ──────────────────────────────────────────────────────────────────────
 
-  /** Revoke every session in a family (replay attack / device logout). */
+  /** Revoke every session in a family (replay attack / device signout). */
   async revokeFamily(
     familyId: string,
     reason: RevokedReason = RevokedReason.EXPIRED,
@@ -306,10 +306,10 @@ export const sessionService = {
     return count;
   },
 
-  /** Revoke a single session (normal logout). */
+  /** Revoke a single session (normal signout). */
   async revoke(
     sessionId: string,
-    reason: RevokedReason = RevokedReason.LOGOUT,
+    reason: RevokedReason = RevokedReason.SIGNOUT,
   ): Promise<void> {
     await prisma.userSession.updateMany({
       where: { id: sessionId, status: SessionStatus.ACTIVE },

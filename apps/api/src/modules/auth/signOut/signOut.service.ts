@@ -17,7 +17,7 @@ export async function signOutService({
   accessExp,
 }: SignOutParams) {
   // 1. Revoke the session → kills the refresh token chain
-  await sessionService.revoke(sessionId, "LOGOUT");
+  await sessionService.revoke(sessionId, RevokedReason.SIGNOUT);
 
   // 2. Denylist the access token JTI → kills the in-flight access token
   if (accessJti) {
@@ -29,7 +29,7 @@ export async function signOutService({
       jti: accessJti,
       userId,
       sessionId,
-      reason: RevokedReason.LOGOUT,
+      reason: RevokedReason.SIGNOUT,
       expiresAt,
     });
   }

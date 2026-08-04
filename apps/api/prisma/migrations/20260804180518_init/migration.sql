@@ -5,7 +5,7 @@ CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'BANNED');
 CREATE TYPE "SessionStatus" AS ENUM ('ACTIVE', 'REVOKED');
 
 -- CreateEnum
-CREATE TYPE "RevokedReason" AS ENUM ('ROTATED', 'REPLAY_ATTACK', 'LOGOUT', 'ADMIN', 'EXPIRED');
+CREATE TYPE "RevokedReason" AS ENUM ('ROTATED', 'REPLAY_ATTACK', 'SIGNOUT', 'ADMIN', 'EXPIRED');
 
 -- CreateTable
 CREATE TABLE "users" (

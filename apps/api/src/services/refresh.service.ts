@@ -39,7 +39,7 @@ export async function refreshService(
   const userId = payload.sub!;
 
   // 1b. Denylist check — ONLY catches explicit revocations
-  //     (logout, admin, reuse). "rotated" tokens are NOT here.
+  //     (signout, admin, reuse). "rotated" tokens are NOT here.
   if (payload.jti && (await denylistService.isDenied(payload.jti))) {
     throw new UnauthorizedError("Token has been revoked");
   }
@@ -207,12 +207,12 @@ SCENARIO 3: Replay attack (stolen token, > 10s)
   → throw 401 "Session compromised" ✓
 
 
-SCENARIO 4: Replaying a token after logout
+SCENARIO 4: Replaying a token after signout
 ──────────────────────────────────────────
-  Token was denylisted during logout (reason: "logout")
+  Token was denylisted during signout (reason: "signout")
   → denylist HIT at step 1b
   → throw 401 "Token has been revoked" ✓
-  → No family revocation needed (logout already revoked session)
+  → No family revocation needed (signout already revoked session)
 
 
 SCENARIO 5: Replaying after reuse was already detected

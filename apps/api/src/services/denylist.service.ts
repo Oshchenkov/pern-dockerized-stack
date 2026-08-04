@@ -5,7 +5,7 @@ import { logger } from "#src/config/logger";
 import { DENYLIST_PREFIX } from "#src/utils/constants";
 
 /**
- * OWASP: Maintain a JWT denylist for logout / revocation.
+ * OWASP: Maintain a JWT denylist for signout / revocation.
  * Redis = fast path (TTL-aligned with token expiry).
  * PostgreSQL = durable audit trail + fallback if Redis is down.
  */

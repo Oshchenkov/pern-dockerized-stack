@@ -49,20 +49,20 @@ async function main() {
       : `❌ Expected 401, got ${replayRes.status}`,
   );
 
-  // ── 5. Logout ──
-  const logoutRes = await fetch(`${BASE}/auth/logout`, {
+  // ── 5. Signout ──
+  const logoutRes = await fetch(`${BASE}/auth/signout`, {
     method: "POST",
     headers: { Cookie: cookieJar },
   });
-  console.log("✅ Logout:", logoutRes.status);
+  console.log("✅ Signout:", logoutRes.status);
 
-  // ── 6. Access after logout → expect 401 ──
+  // ── 6. Access after Signout → expect 401 ──
   const afterLogout = await fetch(`${BASE}/auth/me`, {
     headers: { Cookie: cookieJar },
   });
   console.log(
     afterLogout.status === 401
-      ? "✅ Post-logout access denied (401)"
+      ? "✅ Post-Signout access denied (401)"
       : `❌ Expected 401, got ${afterLogout.status}`,
   );
 }

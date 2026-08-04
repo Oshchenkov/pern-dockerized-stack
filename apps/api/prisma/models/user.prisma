@@ -11,7 +11,7 @@ enum SessionStatus {
 enum RevokedReason {
     ROTATED
     REPLAY_ATTACK
-    LOGOUT
+    SIGNOUT
     ADMIN
     EXPIRED
 }

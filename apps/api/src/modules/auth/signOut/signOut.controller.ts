@@ -34,7 +34,7 @@ export async function signOutController(
     clearAccessTokenCookie(res);
     clearRefreshTokenCookie(res);
 
-    res.sendResponse(200, null, "Logged out");
+    res.sendResponse(200, null, "Sign Out");
   } catch (err) {
     next(err);
   }
