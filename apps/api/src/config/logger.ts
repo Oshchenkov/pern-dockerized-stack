@@ -15,7 +15,7 @@ export const logger = pino({
       "body.accessToken",
       "body.refreshToken",
     ],
-    censor: "[REDACTED]",
+    censor: "[HIDDEN]",
   },
 
   ...(env.isDevelopment
