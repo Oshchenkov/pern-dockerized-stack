@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 import { logger } from "#src/config/logger";
 
 // ── Custom Error Class ───────────────────────────────────────────────
@@ -16,49 +17,59 @@ export class AppError extends Error {
 // ── 404 Handler ──────────────────────────────────────────────────────
 export const notFound = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void => {
   next(new AppError(404, `Route not found: ${req.method} ${req.originalUrl}`));
 };
 
-// Other errors
+// ── HTTP Errors ──────────────────────────────────────────────────────
+export class BadRequestError extends AppError {
+  constructor(message = "Invalid request", details?: unknown) {
+    super(400, message, details);
+    this.name = "BadRequestError";
+  }
+}
 
 export class UnauthorizedError extends AppError {
   constructor(message = "Authentication required", details?: unknown) {
-    super(401, `UNAUTHORIZED: ${message}`, details);
+    super(401, message, details);
+    this.name = "UnauthorizedError";
   }
 }
 
 export class ForbiddenError extends AppError {
   constructor(message = "Access denied", details?: unknown) {
-    super(403, `FORBIDDEN: ${message}`, details);
+    super(403, message, details);
+    this.name = "ForbiddenError";
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message = "Resource not found", details?: unknown) {
+    super(404, message, details);
+    this.name = "NotFoundError";
   }
 }
 
 export class ConflictError extends AppError {
   constructor(message = "Resource already exists", details?: unknown) {
-    super(409, `CONFLICT: ${message}`, details);
+    super(409, message, details);
+    this.name = "ConflictError";
   }
 }
 
 export class TooManyRequestsError extends AppError {
   constructor(message = "Too many requests", details?: unknown) {
-    super(429, `TOO_MANY_REQUESTS: ${message}`, details);
-  }
-}
-
-export class BadRequestError extends AppError {
-  constructor(message = "Invalid request", details?: unknown) {
-    super(400, `BAD_REQUEST: ${message}`, details);
+    super(429, message, details);
+    this.name = "TooManyRequestsError";
   }
 }
 
 // ── Session & Token Errors ──────────────────────────────────────────
-
 export class SessionNotFoundError extends AppError {
   constructor(message = "Session not found", details?: unknown) {
-    super(401, `SESSION_NOT_FOUND: ${message}`, details);
+    super(401, message, details);
     this.name = "SessionNotFoundError";
   }
 }
@@ -69,24 +80,21 @@ export class TokenReuseDetectedError extends AppError {
     public readonly userId: string,
     message = "Token reuse detected",
   ) {
-    // Pass family and user IDs into the details object
-    super(401, `TOKEN_REUSE_DETECTED: ${message}`, { familyId, userId });
+    super(401, message, { familyId, userId });
     this.name = "TokenReuseDetectedError";
   }
 }
 
 export class SessionInactiveError extends AppError {
-  // Note: You could also use 403 (Forbidden) here if "inactive" means suspended by an admin,
-  // but 401 (Unauthorized) is standard if it simply prevents authentication.
   constructor(message = "Session is inactive", details?: unknown) {
-    super(401, `SESSION_INACTIVE: ${message}`, details);
+    super(401, message, details);
     this.name = "SessionInactiveError";
   }
 }
 
 export class SessionExpiredError extends AppError {
   constructor(message = "Session has expired", details?: unknown) {
-    super(401, `SESSION_EXPIRED: ${message}`, details);
+    super(401, message, details);
     this.name = "SessionExpiredError";
   }
 }
@@ -98,18 +106,27 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ): void => {
-  // Guard: headers already sent (e.g. streaming response failed mid-way)
   if (res.headersSent) {
     return;
   }
 
-  // ── Known application errors ─────────────────────────────────────
+  // ── 1. Known application errors ──────────────────────────────────
   if (err instanceof AppError) {
     res.sendResponse(err.statusCode, err.details ?? null, err.message);
     return;
   }
 
-  // ── PostgreSQL errors ────────────────────────────────────────────
+  // ── 2. Zod validation errors ─────────────────────────────────────
+  if (err instanceof ZodError) {
+    const details = err.issues.map((i) => ({
+      path: i.path.join("."),
+      message: i.message,
+    }));
+    res.sendResponse(400, details, "Validation failed");
+    return;
+  }
+
+  // ── 3. PostgreSQL errors ─────────────────────────────────────────
   const pgError = err as {
     code?: string;
     detail?: string;
@@ -139,7 +156,7 @@ export const errorHandler = (
     return;
   }
 
-  // ── Unknown / unhandled errors ───────────────────────────────────
+  // ── 4. Unknown / unhandled errors ────────────────────────────────
   logger.error(
     {
       stack: err.stack,
@@ -154,3 +171,37 @@ export const errorHandler = (
 
   res.sendResponse(500, data, "Internal server error");
 };
+
+/*
+## Error flow diagram
+
+Request hits a route
+        │
+        ▼
+  Some code throws
+        │
+        ├─── new UnauthorizedError("...")     ──┐
+        ├─── new SessionNotFoundError("...")    │
+        ├─── new TokenReuseDetectedError(...)   ├── instanceof AppError? ──► YES
+        ├─── new ConflictError("...")           │         │
+        ├─── new BadRequestError("...")         │         ▼
+        ├─── new TooManyRequestsError("...")  ──┘   errorHandler sends
+        │                                          err.statusCode + message
+        │
+        ├─── new ZodError(issues)              ──── instanceof ZodError? ──► YES
+        │                                                │
+        │                                                ▼
+        │                                          400 + field details
+        │
+        ├─── Prisma throws { code: "23505" }   ──── pgError.code match ──► YES
+        │                                                │
+        │                                                ▼
+        │                                          409 "Duplicate entry"
+        │
+        └─── new TypeError("...")              ──── none of the above ──► FALLTHROUGH
+        └─── new RangeError("...")                       │
+        └─── prisma.$disconnect() crash                  ▼
+                                                   logger.error(...)
+                                                   500 "Internal server error"
+
+*/
