@@ -106,6 +106,7 @@ export async function verifyAccessToken(
   token: string,
 ): Promise<AccessTokenPayload> {
   const { payload } = await jwtVerify(token, accessSecret, {
+    algorithms: [alg],
     issuer,
     audience,
   });

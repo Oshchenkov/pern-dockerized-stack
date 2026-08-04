@@ -109,16 +109,13 @@ export const sessionService = {
       // Within leeway → signal retry to caller (handled in rotate)
     }
 
-    if (
-      session.status !== "ACTIVE" &&
-      session.status !== SessionStatus.REVOKED
-    ) {
+    if (session.status !== SessionStatus.ACTIVE) {
       throw new SessionInactiveError();
     }
 
     if (session.expiresAt < new Date()) {
       await prisma.userSession.updateMany({
-        where: { id: session.id, status: "ACTIVE" },
+        where: { id: session.id, status: SessionStatus.ACTIVE },
         data: {
           status: SessionStatus.REVOKED,
           revokedAt: new Date(),
@@ -175,8 +172,7 @@ export const sessionService = {
           const withinLeeway =
             elapsed <= REUSE_LEEWAY_MS && old.replaced_by !== null;
 
-          if (!withinLeeway) {
-            // ATTACK — revoke entire family inside the same tx
+          async function revokeReplayAttack() {
             await tx.userSession.updateMany({
               where: { familyId: old.family_id },
               data: {
@@ -185,6 +181,11 @@ export const sessionService = {
                 revokedReason: RevokedReason.REPLAY_ATTACK,
               },
             });
+          }
+
+          if (!withinLeeway) {
+            // ATTACK — revoke entire family inside the same tx
+            await revokeReplayAttack();
             throw new TokenReuseDetectedError(old.family_id, old.user_id);
           }
 
@@ -195,16 +196,9 @@ export const sessionService = {
             where: { id: old.replaced_by! },
           });
 
-          if (!replacement || replacement.status !== "ACTIVE") {
+          if (!replacement || replacement.status !== SessionStatus.ACTIVE) {
             // Replacement already gone → treat as attack
-            await tx.userSession.updateMany({
-              where: { familyId: old.family_id },
-              data: {
-                status: SessionStatus.REVOKED,
-                revokedAt: new Date(),
-                revokedReason: RevokedReason.REPLAY_ATTACK,
-              },
-            });
+            await revokeReplayAttack();
             throw new TokenReuseDetectedError(old.family_id, old.user_id);
           }
 
@@ -431,7 +425,7 @@ Execution order
   PHASE 3 — atomic DB write
   ┌─────────────────────────────────────────────────┐
   │ $transaction(Serializable)                      │
-  │   SELECT … FOR UPDATE   ← row lock             │
+  │   SELECT … FOR UPDATE   ← row lock              │
   │   if REVOKED again → leeway or blast radius     │
   │   UPDATE old → REVOKED, replacedBy              │
   │   INSERT new session                            │
