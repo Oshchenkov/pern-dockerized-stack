@@ -162,6 +162,7 @@ export const errorHandler = (
       stack: err.stack,
       path: req.originalUrl,
       requestId: req.requestId,
+      err,
     },
     `Unhandled error: ${err.message}`,
   );

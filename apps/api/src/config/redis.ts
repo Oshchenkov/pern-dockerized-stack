@@ -14,7 +14,7 @@ const redis = new Redis(redisUrl, {
 });
 
 redis.on("connect", () => logger.info("Redis connected"));
-redis.on("error", (err: Error) => logger.error(`Redis error: ${err.message}`));
+redis.on("error", (err: Error) => logger.error(`Redis error: ${err}`));
 redis.on("close", () => logger.warn("Redis connection closed"));
 
 function redisExecuteWhenConnected(callback: () => void) {

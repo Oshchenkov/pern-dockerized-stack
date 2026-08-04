@@ -11,7 +11,6 @@ import { pinoHttp } from "pino-http";
 import { randomUUID } from "node:crypto";
 import { logger } from "#src/config/logger";
 import { env } from "#src/config/env";
-// import { authenticate, authorize } from "./middleware/auth.middleware.js";
 
 const app: Application = express();
 

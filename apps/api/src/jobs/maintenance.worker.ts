@@ -85,7 +85,7 @@ export function startMaintenanceWorker(): Worker {
         jobId: job?.id,
         name: job?.name,
         attempt: job?.attemptsMade,
-        err: err.message,
+        err,
       },
       "Job failed",
     );
