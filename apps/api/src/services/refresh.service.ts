@@ -13,8 +13,6 @@ import {
 import { denylistService } from "#src/services/denylist.service";
 import { sessionService } from "#src/services/session.service";
 import {
-  ACCESS_TOKEN_TTL,
-  REFRESH_TOKEN_TTL,
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
@@ -173,8 +171,6 @@ export async function refreshService(
   return {
     accessToken: newAccessJwt,
     refreshToken: newRefreshJwt,
-    accessExpiresIn: ACCESS_TOKEN_TTL,
-    refreshExpiresIn: REFRESH_TOKEN_TTL,
   };
 }
 

@@ -5,7 +5,6 @@ import { hashToken } from "#src/utils/crypto";
 import {
   signAccessToken,
   signRefreshToken,
-  ACCESS_TOKEN_TTL,
   REFRESH_TOKEN_TTL,
 } from "#src/services/token.service";
 import {
@@ -52,7 +51,6 @@ export const sessionService = {
     refreshTokenHash: string;
     ipAddress?: string;
     userAgent?: string;
-    country?: string;
   }) {
     return prisma.userSession.create({
       data: {
@@ -62,7 +60,6 @@ export const sessionService = {
         refreshTokenHash: params.refreshTokenHash,
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent ?? null,
-        country: params.country ?? null,
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
         status: UserStatus.ACTIVE,
       },
@@ -160,11 +157,10 @@ export const sessionService = {
           replaced_by: string | null;
           ip_address: string | null;
           user_agent: string | null;
-          country: string | null;
         }> = await tx.$queryRaw`
           SELECT id, family_id, user_id, status,
                  revoked_at, replaced_by,
-                 ip_address, user_agent, country
+                 ip_address, user_agent
           FROM user_sessions
           WHERE refresh_token_hash = ${params.oldRefreshTokenHash}
           FOR UPDATE
@@ -231,7 +227,6 @@ export const sessionService = {
               refreshTokenHash: params.newRefreshTokenHash,
               ipAddress: params.ipAddress ?? replacement.ipAddress,
               userAgent: params.userAgent ?? replacement.userAgent,
-              country: replacement.country,
               expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
               status: SessionStatus.ACTIVE,
             },
@@ -278,7 +273,6 @@ export const sessionService = {
             refreshTokenHash: params.newRefreshTokenHash,
             ipAddress: params.ipAddress ?? old.ip_address,
             userAgent: params.userAgent ?? old.user_agent,
-            country: old.country,
             expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
             status: SessionStatus.ACTIVE,
           },
@@ -377,7 +371,7 @@ export const sessionService = {
 export async function issueTokens(
   userId: string,
   tokenVersion: number,
-  meta: { ip?: string; ua?: string; country?: string },
+  meta: { ip?: string; ua?: string },
 ) {
   const sessionId = randomUUID();
   const familyId = randomUUID();
@@ -402,14 +396,11 @@ export async function issueTokens(
     refreshTokenHash: hashToken(refreshToken),
     ipAddress: meta.ip,
     userAgent: meta.ua,
-    country: meta.country,
   });
 
   return {
     accessToken,
     refreshToken,
-    accessExpiresIn: ACCESS_TOKEN_TTL,
-    refreshExpiresIn: REFRESH_TOKEN_TTL,
   };
 }
 
