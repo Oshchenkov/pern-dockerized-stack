@@ -1,39 +1,36 @@
+import { RevokedReason } from "#root/prisma/generated/prisma/enums";
 import { denylistService } from "#src/services/denylist.service";
 import { sessionService } from "#src/services/session.service";
-import { ACCESS_TOKEN_TTL, verifyRefreshToken } from "#src/services/token.service";
+import { ACCESS_TOKEN_TTL } from "#src/services/token.service";
 
-export async function signOutService(
-    refreshTokenRaw: string,
-    accessTokenJti?: string,
-    userId?: string,
-  ) {
-    // Revoke the session
-    try {
-      const payload = await verifyRefreshToken(refreshTokenRaw);
-      if (payload.sid) {
-        await sessionService.revoke(payload.sid);
-      }
-      // Denylist the refresh JTI
-      if (payload.jti) {
-        await denylistService.add({
-          jti: payload.jti,
-          userId: payload.sub!,
-          sessionId: payload.sid,
-          reason: "logout",
-          expiresAt: new Date((payload.exp ?? 0) * 1000),
-        });
-      }
-    } catch {
-      // Token already invalid — that's fine
-    }
+interface SignOutParams {
+  userId: string;
+  sessionId: string;
+  accessJti?: string;
+  accessExp?: number; // unix seconds from JWT
+}
 
-    // Denylist the current access token JTI (if provided)
-    if (accessTokenJti && userId) {
-      await denylistService.add({
-        jti: accessTokenJti,
-        userId,
-        reason: "logout",
-        expiresAt: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
-      });
-    }
+export async function signOutService({
+  userId,
+  sessionId,
+  accessJti,
+  accessExp,
+}: SignOutParams) {
+  // 1. Revoke the session → kills the refresh token chain
+  await sessionService.revoke(sessionId, "LOGOUT");
+
+  // 2. Denylist the access token JTI → kills the in-flight access token
+  if (accessJti) {
+    const expiresAt = accessExp
+      ? new Date(accessExp * 1000)
+      : new Date(Date.now() + ACCESS_TOKEN_TTL * 1000);
+
+    await denylistService.add({
+      jti: accessJti,
+      userId,
+      sessionId,
+      reason: RevokedReason.LOGOUT,
+      expiresAt,
+    });
   }
+}

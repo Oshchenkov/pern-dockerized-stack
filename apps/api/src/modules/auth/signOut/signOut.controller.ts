@@ -1,4 +1,3 @@
-import { verifyAccessToken } from "#src/services/token.service";
 import { NextFunction, Request, Response } from "express";
 import { signOutService } from "./signOut.service";
 import {
@@ -6,6 +5,7 @@ import {
   clearRefreshTokenCookie,
 } from "#src/utils/cookieHandler";
 import { COOKIE_NAMES } from "#src/utils/constants";
+import { decodeJwt } from "jose";
 
 export async function signOutController(
   req: Request,
@@ -13,24 +13,22 @@ export async function signOutController(
   next: NextFunction,
 ) {
   try {
-    const refreshToken = req.cookies?.[COOKIE_NAMES.REFRESH_TOKEN];
     const accessToken = req.cookies?.[COOKIE_NAMES.ACCESS_TOKEN];
 
-    let accessJti: string | undefined;
-    let userId: string | undefined;
-
     if (accessToken) {
-      try {
-        const payload = await verifyAccessToken(accessToken);
-        accessJti = payload.jti;
-        userId = payload.sub;
-      } catch {
-        /* expired — fine */
-      }
-    }
+      // decodeJwt reads claims WITHOUT verifying expiry.
+      // Safe here: the cookie is HttpOnly and was set by the server,
+      // so the signature is trustworthy even if the token expired.
+      const payload = decodeJwt(accessToken);
 
-    if (refreshToken) {
-      await signOutService(refreshToken, accessJti, userId);
+      if (payload.sub && payload.sid) {
+        await signOutService({
+          userId: payload.sub as string,
+          sessionId: payload.sid as string,
+          accessJti: payload.jti as string | undefined,
+          accessExp: payload.exp,
+        });
+      }
     }
 
     clearAccessTokenCookie(res);

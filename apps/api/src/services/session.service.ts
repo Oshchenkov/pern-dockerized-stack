@@ -9,7 +9,6 @@ import {
 } from "#src/services/token.service";
 import {
   RevokedReason,
-  UserStatus,
   SessionStatus,
 } from "#root/prisma/generated/prisma/enums";
 import {
@@ -61,7 +60,7 @@ export const sessionService = {
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent ?? null,
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
-        status: UserStatus.ACTIVE,
+        status: SessionStatus.ACTIVE,
       },
     });
   },
