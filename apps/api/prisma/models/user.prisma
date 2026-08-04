@@ -78,7 +78,6 @@ model UserSession {
     status           SessionStatus  @default(ACTIVE) @map("status")
     ipAddress        String?        @map("ip_address") @db.Inet
     userAgent        String?        @map("user_agent") // Raw browser string
-    country          String?        @map("country") // Derived from IP via GeoIP
     expiresAt        DateTime       @map("expires_at")
     lastActiveAt     DateTime       @default(now()) @map("last_active_at")
     revokedAt        DateTime?      @map("revoked_at")
@@ -98,12 +97,12 @@ model UserSession {
 // Optional persistent JWT denylist.
 // Redis is the fast path, PostgreSQL is fallback/audit.
 model UserRevokedToken {
-    jti       String   @id
-    sid       String?
-    userId    String
-    reason    String
-    expiresAt DateTime
-    createdAt DateTime @default(now())
+    jti       String   @id @map("jti") // JWT ID
+    sid       String?  @map("sid") // session.familyId
+    userId    String   @map("user_id")
+    reason    String   @map("reason")
+    expiresAt DateTime @map("expires_at")
+    createdAt DateTime @default(now()) @map("created_at")
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -119,11 +118,11 @@ model UserRevokedToken {
 // organization:org1 editor project:project1
 model UserRelationshipTuple {
     id          String   @id @default(uuid())
-    subjectType String // user, organization, group, serviceAccount
-    subjectId   String
-    relation    String // owner, admin, member, editor, viewer
-    objectType  String // document, project, organization, folder
-    objectId    String
+    subjectType String   @map("subject_type") // user, organization, group, serviceAccount
+    subjectId   String   @map("subject_id")
+    relation    String   @map("relation") // owner, admin, member, editor, viewer
+    objectType  String   @map("object_type") // document, project, organization, folder
+    objectId    String   @map("object_id")
     createdAt   DateTime @default(now())
 
     @@unique([subjectType, subjectId, relation, objectType, objectId])
@@ -134,8 +133,8 @@ model UserRelationshipTuple {
 
 model UserProfile {
     userId      String  @id @map("user_id")
-    name        String?
-    surname     String?
+    name        String? @map("name")
+    surname     String? @map("surname")
     avatarUrl   String? @map("avatar_url")
     profileInfo Json?   @map("profile_info") // JSON blob for additional profile info from oAuth
 
