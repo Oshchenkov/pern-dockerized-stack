@@ -2,7 +2,7 @@ import pino from "pino";
 import { env } from "./env";
 
 export const logger = pino({
-  level: env.isDevelopment ? "info" : "error",
+  level: env.isDevelopment ? "debug" : "error",
 
   timestamp: pino.stdTimeFunctions.isoTime,
 

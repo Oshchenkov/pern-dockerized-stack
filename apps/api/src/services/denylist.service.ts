@@ -59,14 +59,15 @@ export const denylistService = {
       if (val !== null) return true;
     } catch (err) {
       logger.warn({ err }, "Redis denylist GET failed; checking PG");
+      // PG fallback
+      const record = await prisma.userRevokedToken.findUnique({
+        where: { jti },
+        select: { jti: true },
+      });
+      return record !== null;
     }
 
-    // PG fallback
-    const count = await prisma.userRevokedToken.count({
-      where: { jti },
-    });
-
-    return count > 0;
+    return false;
   },
 
   /** Purge expired entries (cron job). */
