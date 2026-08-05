@@ -62,11 +62,11 @@ export const denylistService = {
     }
 
     // PG fallback
-    const record = await prisma.userRevokedToken.findUnique({
+    const count = await prisma.userRevokedToken.count({
       where: { jti },
-      select: { jti: true },
     });
-    return record !== null;
+
+    return count > 0;
   },
 
   /** Purge expired entries (cron job). */
