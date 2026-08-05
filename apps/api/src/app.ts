@@ -11,6 +11,7 @@ import { pinoHttp } from "pino-http";
 import { randomUUID } from "node:crypto";
 import { logger } from "#src/config/logger";
 import { env } from "#src/config/env";
+import pino from "pino";
 
 const app: Application = express();
 
@@ -54,6 +55,14 @@ app.use(
       }
 
       return "info";
+    },
+    serializers: {
+      req: (req) => undefined,
+      res: (res) => undefined,
+      err: pino.stdSerializers.err,
+    },
+    customSuccessMessage: (req, res, responseTime: number) => {
+      return `${req.method} ${req.originalUrl}  ${res.statusCode}`;
     },
   }),
 );
